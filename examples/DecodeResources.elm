@@ -1,18 +1,12 @@
-# jsonapi-decode [![Build Status](https://travis-ci.org/FabienHenon/jsonapi-decode.svg?branch=master)](https://travis-ci.org/FabienHenon/jsonapi-decode)
+module DecodeResources exposing (main)
 
-```
-elm package install FabienHenon/jsonapi-decode
-```
+import Html exposing (Html, div, ul, li, text, h1, p, sup)
+import Json.Decode as JD exposing (map4, succeed, field, string, map6, Decoder)
+import JsonApi exposing (ResourceInfo)
+import JsonApi.Decode as Decode
+import Dict exposing (Dict)
 
-`JsonApi` allows you to decode json content conforming to the [Json Api spec](http://jsonapi.org/).
-We can decode resources and their relationships.
 
-## Getting started
-
-### Types
-First, you need to declare your types:
-
-```elm
 type alias Post =
     { id : String
     , links : Dict String String
@@ -37,17 +31,7 @@ type alias Comment =
     , content : String
     , email : String
     }
-```
 
-With these records we will retrieve resources of type `Post`. These posts contain one `Creator` and one or many `Comment`s.
-
-### Decoders
-Then you have to define your resource decoder as well as the decoders for the relationships you need:
-
-```elm
-import JsonApi exposing (ResourceInfo)
-import JsonApi.Decode as Decode
-import Json.Decode as JD exposing (map4, succeed, field, string, map6, Decoder)
 
 commentDecoder : ResourceInfo -> Decoder Comment
 commentDecoder resourceInfo =
@@ -77,32 +61,86 @@ postDecoder resourceInfo =
         (Decode.relationship "creator" resourceInfo creatorDecoder)
         (Decode.relationships "comments" resourceInfo commentDecoder)
 
-```
 
-Your decoders will be passed a `ResourceInfo` containing internal information about how to decode the resources and their relationships.
-From this `ResourceInfo` you can also get the resource's `id` and `links`.
+type Msg
+    = NoOp
 
-Then you only need to decode your resource as usual using the decoder of your choice.
 
-If you need to decode relationships you have 2 functions: `relationship` and `relationships`. While the former will decode a unique relationship, the later will decode a list of relationships.
+type alias Model =
+    { posts : Maybe (List Post)
+    }
 
-These functions are given the type of the relationship to decode from the `relationships` json attribute, the `ResourceInfo` object, and the relationship decoder.
 
-### Decoding
-Finally you will want to decode your json payload and retrieve your resources:
+main : Program Never Model Msg
+main =
+    Html.program
+        { init = init
+        , view = view
+        , update = update
+        , subscriptions = subscriptions
+        }
 
-```elm
-Decode.resources "posts" postDecoder
-```
 
-By calling the function `resources` you are creating your final decoder. You have to pass it the type of your resources, your resource decoder and it will return a `Decoder` for a `List` of your resource.
+initModel : Model
+initModel =
+    { posts =
+        Decode.resources "posts" postDecoder
+            |> flip JD.decodeString payload
+            |> Result.toMaybe
+    }
 
-You can then finally decode your payload:
 
-```elm
-decode : Result String (List Post)
-decode =
-        Json.Decode.decodeString (Decode.resources "posts" postDecoder) payload
+init : ( Model, Cmd Msg )
+init =
+    ( initModel, Cmd.none )
+
+
+update : Msg -> Model -> ( Model, Cmd Msg )
+update msg model =
+    case msg of
+        NoOp ->
+            ( model, Cmd.none )
+
+
+view : Model -> Html Msg
+view model =
+    div
+        []
+        (case model.posts of
+            Nothing ->
+                [ text "No post available" ]
+
+            Just posts ->
+                [ ul []
+                    (List.map viewPost posts)
+                ]
+        )
+
+
+viewPost : Post -> Html Msg
+viewPost post =
+    li []
+        [ h1 [] [ text post.title ]
+        , div []
+            [ sup [] [ text ("Author: " ++ post.creator.firstname ++ " " ++ post.creator.lastname) ]
+            , p [] [ text post.content ]
+            , ul []
+                (List.map viewComment post.comments)
+            ]
+        ]
+
+
+viewComment : Comment -> Html Msg
+viewComment comment =
+    li []
+        [ sup [] [ text ("Email: " ++ comment.email) ]
+        , p [] [ text comment.content ]
+        ]
+
+
+subscriptions : Model -> Sub Msg
+subscriptions _ =
+    Sub.none
 
 
 payload : String
@@ -229,14 +267,3 @@ payload =
         ]
     }
     """
-```
-
-## Examples
-
-To run the examples go to the `examples` directory, install dependencies and run `elm-reactor`:
-
-```
-> cd examples/
-> elm package install
-> elm-reactor
-```
