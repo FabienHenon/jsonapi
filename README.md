@@ -240,3 +240,7 @@ To run the examples go to the `examples` directory, install dependencies and run
 > elm package install
 > elm-reactor
 ```
+
+## Tests
+
+You can install elm packages in tests folder and run tests with `elm-test`
