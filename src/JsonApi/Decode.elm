@@ -170,7 +170,7 @@ Here is an example of resource `Decoder` with a relationship:
             (field "firstname" string)
             (field "lastname" string)
 
-    postDecoder : ResouceInfo -> Decoder Post
+    postDecoder : ResourceInfo -> Decoder Post
     postDecoder resourceInfo =
         map4 Post
             (succeed (JsonApi.id resourceInfo))
@@ -220,7 +220,7 @@ Here is an example of resource `Decoder` with a list of relationships:
             (field "content" string)
             (field "email" string)
 
-    postDecoder : ResouceInfo -> Decoder Post
+    postDecoder : ResourceInfo -> Decoder Post
     postDecoder resourceInfo =
         map4 Post
             (succeed (JsonApi.id resourceInfo))
@@ -255,7 +255,7 @@ Here is an example of resource `Decoder`:
         , content : String
         }
 
-    postDecoder : ResouceInfo -> Decoder Post
+    postDecoder : ResourceInfo -> Decoder Post
     postDecoder resourceInfo =
         map3 Post
             (succeed (JsonApi.id resourceInfo))
