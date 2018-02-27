@@ -1,7 +1,7 @@
 {
     "version": "1.0.0",
-    "summary": "JsonAPI decode functions",
-    "repository": "https://github.com/FabienHenon/jsonapi-decode.git",
+    "summary": "JsonAPI decoder and encoder functions",
+    "repository": "https://github.com/FabienHenon/jsonapi.git",
     "license": "BSD3",
     "source-directories": [
         "src"

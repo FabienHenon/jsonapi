@@ -1,4 +1,4 @@
-module JsonApi.Decode exposing (resources, relationship, relationships)
+module JsonApi.Decode exposing (resources, resource, relationship, relationships)
 
 {-| Provides functions to decode json api resources and their relationships
 
@@ -130,7 +130,7 @@ module JsonApi.Decode exposing (resources, relationship, relationships)
 
 # Decoders
 
-@docs resources, relationship, relationships
+@docs resources, resource, relationship, relationships
 
 -}
 
@@ -269,6 +269,38 @@ Here is an example of resource `Decoder`:
 resources : String -> (ResourceInfo -> Decoder a) -> Decoder (List a)
 resources type_ decoder =
     field "included" includedDecoder
+        |> andThen (resourcesDataDecoder type_ decoder)
+
+
+{-| Decode only one resource from the json api content.
+
+You pass it the type of the resource (`"posts"` in our example above) and the resource decoder and it will return a
+new `Decoder` representing your resource.
+
+**(The json `data` attribute is an object and not a list)**
+
+Here is an example of resource `Decoder`:
+
+    type alias Post =
+        { id : String
+        , title : String
+        , content : String
+        }
+
+    postDecoder : ResourceInfo -> Decoder Post
+    postDecoder resourceInfo =
+        map3 Post
+            (succeed (JsonApi.id resourceInfo))
+            (field "title" string)
+            (field "content" string)
+
+    -- Decoder for our post from json api
+    resource "posts" postDecoder
+
+-}
+resource : String -> (ResourceInfo -> Decoder a) -> Decoder a
+resource type_ decoder =
+    field "included" includedDecoder
         |> andThen (resourceDataDecoder type_ decoder)
 
 
@@ -276,10 +308,16 @@ resources type_ decoder =
 -- LOGIC
 
 
-resourceDataDecoder : String -> (ResourceInfo -> Decoder a) -> List ResourceInfo -> Decoder (List a)
-resourceDataDecoder type_ decoder included =
+resourcesDataDecoder : String -> (ResourceInfo -> Decoder a) -> List ResourceInfo -> Decoder (List a)
+resourcesDataDecoder type_ decoder included =
     field "data" (list (dataDecoder type_ decoder included))
         |> map (List.filterMap identity)
+
+
+resourceDataDecoder : String -> (ResourceInfo -> Decoder a) -> List ResourceInfo -> Decoder a
+resourceDataDecoder type_ decoder included =
+    field "data" (dataDecoder type_ decoder included)
+        |> andThen (Maybe.map succeed >> Maybe.withDefault (fail "data type not found"))
 
 
 dataDecoder : String -> (ResourceInfo -> Decoder a) -> List ResourceInfo -> Decoder (Maybe a)

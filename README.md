@@ -1,11 +1,11 @@
-# jsonapi-decode [![Build Status](https://travis-ci.org/FabienHenon/jsonapi-decode.svg?branch=master)](https://travis-ci.org/FabienHenon/jsonapi-decode)
+# jsonapi [![Build Status](https://travis-ci.org/FabienHenon/jsonapi.svg?branch=master)](https://travis-ci.org/FabienHenon/jsonapi)
 
 ```
-elm package install FabienHenon/jsonapi-decode
+elm package install FabienHenon/jsonapi
 ```
 
-`JsonApi` allows you to decode json content conforming to the [Json Api spec](http://jsonapi.org/).
-We can decode resources and their relationships.
+`JsonApi` allows you to decode and encode json content conforming to the [Json Api spec](http://jsonapi.org/).
+We can decode and encode resources and their relationships.
 
 ## Getting started
 
@@ -95,7 +95,7 @@ Finally you will want to decode your json payload and retrieve your resources:
 Decode.resources "posts" postDecoder
 ```
 
-By calling the function `resources` you are creating your final decoder. You have to pass it the type of your resources, your resource decoder and it will return a `Decoder` for a `List` of your resource.
+By calling the function `resources` you are creating your final decoder. You have to pass it the type of your resources, your resource decoder and it will return a `Decoder` for a `List` of your resource. _You can also call `resource` that will return a `Decoder a` instead of `Decoder (List a)`. Useful when you will have only one resource in your payload_
 
 You can then finally decode your payload:
 

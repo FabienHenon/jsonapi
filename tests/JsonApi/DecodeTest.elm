@@ -3,6 +3,8 @@ module JsonApi.DecodeTest exposing (..)
 import Expect exposing (Expectation)
 import Test exposing (..)
 import JsonApi.Decode as Decode
+import JsonApi.Data.ResourcesPayloads as Resources
+import JsonApi.Data.ResourcePayloads as Resource
 import JsonApi exposing (ResourceInfo)
 import Json.Decode exposing (Decoder, field, string, succeed, decodeString, map4, map6)
 import Dict exposing (Dict)
@@ -14,7 +16,7 @@ suite =
         [ describe "resources"
             [ test "decode success" <|
                 \() ->
-                    case decodeString (Decode.resources "posts" postDecoder) validPayload of
+                    case decodeString (Decode.resources "posts" postDecoder) Resources.validPayload of
                         Ok resources ->
                             Expect.all
                                 [ List.map .id >> Expect.equalLists [ "13608770-76dd-47e5-a1c4-4d0d9c2483ad", "13608770-76dd-47e5-a1c4-4d0d9c2483ae" ]
@@ -35,7 +37,7 @@ suite =
                             Expect.fail error
             , test "decode success with missing links" <|
                 \() ->
-                    case decodeString (Decode.resources "posts" postDecoder) validPayloadWithoutLinks of
+                    case decodeString (Decode.resources "posts" postDecoder) Resources.validPayloadWithoutLinks of
                         Ok resources ->
                             Expect.all
                                 [ List.map .id >> Expect.equalLists [ "13608770-76dd-47e5-a1c4-4d0d9c2483ad" ]
@@ -55,47 +57,47 @@ suite =
                             Expect.fail error
             , test "decode faild with missing data field" <|
                 \() ->
-                    decodeString (Decode.resources "posts" postDecoder) invalidPayloadWithoutData
+                    decodeString (Decode.resources "posts" postDecoder) Resources.invalidPayloadWithoutData
                         |> Expect.err
             , test "decode failed with missing attributes field" <|
                 \() ->
-                    decodeString (Decode.resources "posts" postDecoder) invalidPayloadWithoutAttributes
+                    decodeString (Decode.resources "posts" postDecoder) Resources.invalidPayloadWithoutAttributes
                         |> Expect.err
             , test "decode failed with missing id field" <|
                 \() ->
-                    decodeString (Decode.resources "posts" postDecoder) invalidPayloadWithoutId
+                    decodeString (Decode.resources "posts" postDecoder) Resources.invalidPayloadWithoutId
                         |> Expect.err
             , test "decode failed with missing type field" <|
                 \() ->
-                    decodeString (Decode.resources "posts" postDecoder) invalidPayloadWithoutType
+                    decodeString (Decode.resources "posts" postDecoder) Resources.invalidPayloadWithoutType
                         |> Expect.err
             , test "decode resources failed" <|
                 \() ->
-                    decodeString (Decode.resources "posts" badPostDecoder) validPayload
+                    decodeString (Decode.resources "posts" badPostDecoder) Resources.validPayload
                         |> Expect.err
             , test "decode failed with bad creatorDecoder" <|
                 \() ->
-                    decodeString (Decode.resources "posts" postBadCreatorDecoder) validPayload
+                    decodeString (Decode.resources "posts" postBadCreatorDecoder) Resources.validPayload
                         |> Expect.err
             , test "decode failed with relationship not in relationships" <|
                 \() ->
-                    decodeString (Decode.resources "posts" postDecoder) invalidPayloadWithoutRelationshipInRelationships
+                    decodeString (Decode.resources "posts" postDecoder) Resources.invalidPayloadWithoutRelationshipInRelationships
                         |> Expect.err
             , test "decode failed with relationship id not found" <|
                 \() ->
-                    decodeString (Decode.resources "posts" postDecoder) invalidPayloadWithoutRelationshipIdNotFound
+                    decodeString (Decode.resources "posts" postDecoder) Resources.invalidPayloadWithoutRelationshipIdNotFound
                         |> Expect.err
             , test "decode failed with relationship type not found" <|
                 \() ->
-                    decodeString (Decode.resources "posts" postDecoder) invalidPayloadWithoutRelationshipTypeNotFound
+                    decodeString (Decode.resources "posts" postDecoder) Resources.invalidPayloadWithoutRelationshipTypeNotFound
                         |> Expect.err
             , test "decode failed with relationship not in included" <|
                 \() ->
-                    decodeString (Decode.resources "posts" postDecoder) invalidPayloadWithoutRelationshipInIncluded
+                    decodeString (Decode.resources "posts" postDecoder) Resources.invalidPayloadWithoutRelationshipInIncluded
                         |> Expect.err
             , test "decode succeed with missing relationships" <|
                 \() ->
-                    case decodeString (Decode.resources "posts" postWithoutRelationshipsDecoder) invalidPayloadWithoutRelationships of
+                    case decodeString (Decode.resources "posts" postWithoutRelationshipsDecoder) Resources.invalidPayloadWithoutRelationships of
                         Ok resources ->
                             Expect.all
                                 [ List.map .id >> Expect.equalLists [ "13608770-76dd-47e5-a1c4-4d0d9c2483ad" ]
@@ -115,19 +117,19 @@ suite =
                             Expect.fail error
             , test "decode failed with missing attributes field for Creator" <|
                 \() ->
-                    decodeString (Decode.resources "posts" postDecoder) invalidPayloadWithoutCreatorAttributes
+                    decodeString (Decode.resources "posts" postDecoder) Resources.invalidPayloadWithoutCreatorAttributes
                         |> Expect.err
             , test "decode failed with missing id field for Creator" <|
                 \() ->
-                    decodeString (Decode.resources "posts" postDecoder) invalidPayloadWithoutCreatorId
+                    decodeString (Decode.resources "posts" postDecoder) Resources.invalidPayloadWithoutCreatorId
                         |> Expect.err
             , test "decode failed with missing type field for Creator" <|
                 \() ->
-                    decodeString (Decode.resources "posts" postDecoder) invalidPayloadWithoutCreatorType
+                    decodeString (Decode.resources "posts" postDecoder) Resources.invalidPayloadWithoutCreatorType
                         |> Expect.err
             , test "decode succeed with missing relationships for Creator" <|
                 \() ->
-                    case decodeString (Decode.resources "posts" postDecoder) invalidPayloadWithoutCreatorRelationships of
+                    case decodeString (Decode.resources "posts" postDecoder) Resources.invalidPayloadWithoutCreatorRelationships of
                         Ok resources ->
                             Expect.all
                                 [ List.map .id >> Expect.equalLists [ "13608770-76dd-47e5-a1c4-4d0d9c2483ad" ]
@@ -147,11 +149,149 @@ suite =
                             Expect.fail error
             , test "decode failed with list of creators instead of one element" <|
                 \() ->
-                    decodeString (Decode.resources "posts" postDecoder) invalidPayloadCreatorIsList
+                    decodeString (Decode.resources "posts" postDecoder) Resources.invalidPayloadCreatorIsList
                         |> Expect.err
             , test "decode failed with one owner instead of list" <|
                 \() ->
-                    decodeString (Decode.resources "posts" postDecoder) invalidPayloadCommentsIsOneElement
+                    decodeString (Decode.resources "posts" postDecoder) Resources.invalidPayloadCommentsIsOneElement
+                        |> Expect.err
+            , test "decode failed with one data object instead of list" <|
+                \() ->
+                    decodeString (Decode.resources "posts" postDecoder) Resources.dataIsObject
+                        |> Expect.err
+            ]
+        , describe "resource"
+            [ test "decode success" <|
+                \() ->
+                    case decodeString (Decode.resource "posts" postDecoder) Resource.validPayload of
+                        Ok resource ->
+                            Expect.all
+                                [ .id >> Expect.equal "13608770-76dd-47e5-a1c4-4d0d9c2483ad"
+                                , .links >> Dict.toList >> Expect.equalLists [ ( "self", "http://link-to-post/1" ) ]
+                                , .title >> Expect.equal "First post"
+                                , .content >> Expect.equal "First post content"
+                                , .creator >> .firstname >> Expect.equal "John"
+                                , .creator >> .lastname >> Expect.equal "Doe"
+                                , .comments >> List.map .content >> Expect.equalLists [ "Comment 2 content", "Comment 3 content" ]
+                                ]
+                                resource
+
+                        Err error ->
+                            Expect.fail error
+            , test "decode success with missing links" <|
+                \() ->
+                    case decodeString (Decode.resource "posts" postDecoder) Resource.validPayloadWithoutLinks of
+                        Ok resource ->
+                            Expect.all
+                                [ .id >> Expect.equal "13608770-76dd-47e5-a1c4-4d0d9c2483ad"
+                                , .links >> Dict.toList >> Expect.equalLists []
+                                , .title >> Expect.equal "First post"
+                                , .content >> Expect.equal "First post content"
+                                , .creator >> .firstname >> Expect.equal "John"
+                                , .creator >> .lastname >> Expect.equal "Doe"
+                                , .comments >> List.map .content >> Expect.equalLists [ "Comment 2 content", "Comment 3 content" ]
+                                ]
+                                resource
+
+                        Err error ->
+                            Expect.fail error
+            , test "decode faild with missing data field" <|
+                \() ->
+                    decodeString (Decode.resource "posts" postDecoder) Resource.invalidPayloadWithoutData
+                        |> Expect.err
+            , test "decode failed with missing attributes field" <|
+                \() ->
+                    decodeString (Decode.resource "posts" postDecoder) Resource.invalidPayloadWithoutAttributes
+                        |> Expect.err
+            , test "decode failed with missing id field" <|
+                \() ->
+                    decodeString (Decode.resource "posts" postDecoder) Resource.invalidPayloadWithoutId
+                        |> Expect.err
+            , test "decode failed with missing type field" <|
+                \() ->
+                    decodeString (Decode.resource "posts" postDecoder) Resource.invalidPayloadWithoutType
+                        |> Expect.err
+            , test "decode resource failed" <|
+                \() ->
+                    decodeString (Decode.resource "posts" badPostDecoder) Resource.validPayload
+                        |> Expect.err
+            , test "decode failed with bad creatorDecoder" <|
+                \() ->
+                    decodeString (Decode.resource "posts" postBadCreatorDecoder) Resource.validPayload
+                        |> Expect.err
+            , test "decode failed with relationship not in relationships" <|
+                \() ->
+                    decodeString (Decode.resource "posts" postDecoder) Resource.invalidPayloadWithoutRelationshipInRelationships
+                        |> Expect.err
+            , test "decode failed with relationship id not found" <|
+                \() ->
+                    decodeString (Decode.resource "posts" postDecoder) Resource.invalidPayloadWithoutRelationshipIdNotFound
+                        |> Expect.err
+            , test "decode failed with relationship type not found" <|
+                \() ->
+                    decodeString (Decode.resource "posts" postDecoder) Resource.invalidPayloadWithoutRelationshipTypeNotFound
+                        |> Expect.err
+            , test "decode failed with relationship not in included" <|
+                \() ->
+                    decodeString (Decode.resource "posts" postDecoder) Resource.invalidPayloadWithoutRelationshipInIncluded
+                        |> Expect.err
+            , test "decode succeed with missing relationships" <|
+                \() ->
+                    case decodeString (Decode.resource "posts" postWithoutRelationshipsDecoder) Resource.invalidPayloadWithoutRelationships of
+                        Ok resource ->
+                            Expect.all
+                                [ .id >> Expect.equal "13608770-76dd-47e5-a1c4-4d0d9c2483ad"
+                                , .links >> Dict.toList >> Expect.equalLists [ ( "self", "http://link-to-post/2" ) ]
+                                , .title >> Expect.equal "First post"
+                                , .content >> Expect.equal "First post content"
+                                , .creator >> .firstname >> Expect.equal "John"
+                                , .creator >> .lastname >> Expect.equal "Doe"
+                                , .comments >> List.map .content >> Expect.equal []
+                                ]
+                                resource
+
+                        Err error ->
+                            Expect.fail error
+            , test "decode failed with missing attributes field for Creator" <|
+                \() ->
+                    decodeString (Decode.resource "posts" postDecoder) Resource.invalidPayloadWithoutCreatorAttributes
+                        |> Expect.err
+            , test "decode failed with missing id field for Creator" <|
+                \() ->
+                    decodeString (Decode.resource "posts" postDecoder) Resource.invalidPayloadWithoutCreatorId
+                        |> Expect.err
+            , test "decode failed with missing type field for Creator" <|
+                \() ->
+                    decodeString (Decode.resource "posts" postDecoder) Resource.invalidPayloadWithoutCreatorType
+                        |> Expect.err
+            , test "decode succeed with missing relationships for Creator" <|
+                \() ->
+                    case decodeString (Decode.resource "posts" postDecoder) Resource.invalidPayloadWithoutCreatorRelationships of
+                        Ok resource ->
+                            Expect.all
+                                [ .id >> Expect.equal "13608770-76dd-47e5-a1c4-4d0d9c2483ad"
+                                , .links >> Dict.toList >> Expect.equalLists [ ( "self", "http://link-to-post/2" ) ]
+                                , .title >> Expect.equal "First post"
+                                , .content >> Expect.equal "First post content"
+                                , .creator >> .firstname >> Expect.equal "John"
+                                , .creator >> .lastname >> Expect.equal "Doe"
+                                , .comments >> List.map .content >> Expect.equal [ "Comment 2 content", "Comment 3 content" ]
+                                ]
+                                resource
+
+                        Err error ->
+                            Expect.fail error
+            , test "decode failed with list of creators instead of one element" <|
+                \() ->
+                    decodeString (Decode.resource "posts" postDecoder) Resource.invalidPayloadCreatorIsList
+                        |> Expect.err
+            , test "decode failed with one owner instead of list" <|
+                \() ->
+                    decodeString (Decode.resource "posts" postDecoder) Resource.invalidPayloadCommentsIsOneElement
+                        |> Expect.err
+            , test "decode failed with data as list instead of object" <|
+                \() ->
+                    decodeString (Decode.resource "posts" postDecoder) Resource.dataIsList
                         |> Expect.err
             ]
         ]
@@ -252,1448 +392,3 @@ badPostDecoder resourceInfo =
         (field "content" string)
         (Decode.relationship "creator" resourceInfo creatorDecoder)
         (Decode.relationships "comments" resourceInfo commentDecoder)
-
-
-validPayload : String
-validPayload =
-    """
-    {
-        "data": [
-            {
-                "type": "posts",
-                "id": "13608770-76dd-47e5-a1c4-4d0d9c2483ad",
-                "links": {
-                    "self": "http://link-to-post/1"
-                },
-                "attributes": {
-                    "title": "First post",
-                    "content": "First post content"
-                },
-                "relationships": {
-                    "creator": {
-                        "data": {
-                            "type": "creators",
-                            "id": "22208770-76dd-47e5-a1c4-4d0d9c2483ad"
-                        },
-                        "links": {
-                            "related": "http://link-to-creator/1"
-                        }
-                    },
-                    "comments": {
-                        "links": {},
-                        "data": [
-                            {
-                                "type": "comment",
-                                "id": "22208770-76dd-47e5-a1c4-4d0d9c2483ab"
-                            },
-                            {
-                                "type": "comment",
-                                "id": "cb0759b0-03ab-4291-b067-84a9017fea6f"
-                            }
-                        ]
-                    }
-                }
-            },
-            {
-                "type": "posts",
-                "id": "13608770-76dd-47e5-a1c4-4d0d9c2483ae",
-                "links": {
-                    "self": "http://link-to-post/2"
-                },
-                "attributes": {
-                    "title": "Second post",
-                    "content": "Second post content"
-                },
-                "relationships": {
-                    "creator": {
-                        "data": {
-                            "type": "creators",
-                            "id": "22208770-76dd-47e5-a1c4-4d0d9c2483ad"
-                        },
-                        "links": {
-                            "related": "http://lnk-to-creator/1"
-                        }
-                    },
-                    "comments": {
-                        "links": {},
-                        "data": [
-                            {
-                                "type": "comment",
-                                "id": "22208770-76dd-47e5-a1c4-4d0d9c2483ac"
-                            }
-                        ]
-                    }
-                }
-            }
-        ],
-        "included": [
-            {
-                "type": "creators",
-                "id": "22208770-76dd-47e5-a1c4-4d0d9c2483ad",
-                "attributes": {
-                    "firstname": "John",
-                    "lastname": "Doe"
-                },
-                "links": {
-                    "self": "http://link-to-creator/1"
-                },
-                "relationships": {}
-            },
-            {
-                "type": "comment",
-                "id": "22208770-76dd-47e5-a1c4-4d0d9c2483ac",
-                "attributes": {
-                    "content": "Comment 1 content",
-                    "email": "john@doe.com"
-                },
-                "links": {
-                    "self": "http://link-to-comment/1"
-                },
-                "relationships": {}
-            },
-            {
-                "type": "comment",
-                "id": "22208770-76dd-47e5-a1c4-4d0d9c2483ab",
-                "attributes": {
-                    "content": "Comment 2 content",
-                    "email": "john@doe.com"
-                },
-                "links": {
-                    "self": "http://link-to-comment/2"
-                },
-                "relationships": {}
-            },
-            {
-                "type": "comment",
-                "id": "cb0759b0-03ab-4291-b067-84a9017fea6f",
-                "attributes": {
-                    "content": "Comment 3 content",
-                    "email": "john@doe.com"
-                },
-                "links": {
-                    "self": "http://link-to-comment/3"
-                },
-                "relationships": {}
-            }
-        ]
-    }
-    """
-
-
-validPayloadWithoutLinks : String
-validPayloadWithoutLinks =
-    """
-    {
-        "data": [
-            {
-                "type": "posts",
-                "id": "13608770-76dd-47e5-a1c4-4d0d9c2483ad",
-                "attributes": {
-                    "title": "First post",
-                    "content": "First post content"
-                },
-                "relationships": {
-                    "creator": {
-                        "data": {
-                            "type": "creators",
-                            "id": "22208770-76dd-47e5-a1c4-4d0d9c2483ad"
-                        },
-                        "links": {
-                            "related": "http://link-to-creator/1"
-                        }
-                    },
-                    "comments": {
-                        "links": {},
-                        "data": [
-                            {
-                                "type": "comment",
-                                "id": "22208770-76dd-47e5-a1c4-4d0d9c2483ab"
-                            },
-                            {
-                                "type": "comment",
-                                "id": "cb0759b0-03ab-4291-b067-84a9017fea6f"
-                            }
-                        ]
-                    }
-                }
-            }
-        ],
-        "included": [
-            {
-                "type": "creators",
-                "id": "22208770-76dd-47e5-a1c4-4d0d9c2483ad",
-                "attributes": {
-                    "firstname": "John",
-                    "lastname": "Doe"
-                },
-                "links": {
-                    "self": "http://link-to-creator/1"
-                },
-                "relationships": {}
-            },
-            {
-                "type": "comment",
-                "id": "22208770-76dd-47e5-a1c4-4d0d9c2483ab",
-                "attributes": {
-                    "content": "Comment 2 content",
-                    "email": "john@doe.com"
-                },
-                "links": {
-                    "self": "http://link-to-comment/2"
-                },
-                "relationships": {}
-            },
-            {
-                "type": "comment",
-                "id": "cb0759b0-03ab-4291-b067-84a9017fea6f",
-                "attributes": {
-                    "content": "Comment 3 content",
-                    "email": "john@doe.com"
-                },
-                "links": {
-                    "self": "http://link-to-comment/3"
-                },
-                "relationships": {}
-            }
-        ]
-    }
-    """
-
-
-invalidPayloadWithoutData : String
-invalidPayloadWithoutData =
-    """
-    {
-        "data-bad": [
-            {
-                "type": "posts",
-                "id": "13608770-76dd-47e5-a1c4-4d0d9c2483ad",
-                "links": {
-                    "self": "http://link-to-post/2"
-                },
-                "attributes": {
-                    "title": "First post",
-                    "content": "First post content"
-                },
-                "relationships": {
-                    "creator": {
-                        "data": {
-                            "type": "creators",
-                            "id": "22208770-76dd-47e5-a1c4-4d0d9c2483ad"
-                        },
-                        "links": {
-                            "related": "http://link-to-creator/1"
-                        }
-                    },
-                    "comments": {
-                        "links": {},
-                        "data": [
-                            {
-                                "type": "comment",
-                                "id": "22208770-76dd-47e5-a1c4-4d0d9c2483ab"
-                            },
-                            {
-                                "type": "comment",
-                                "id": "cb0759b0-03ab-4291-b067-84a9017fea6f"
-                            }
-                        ]
-                    }
-                }
-            }
-        ],
-        "included": [
-            {
-                "type": "creators",
-                "id": "22208770-76dd-47e5-a1c4-4d0d9c2483ad",
-                "attributes": {
-                    "firstname": "John",
-                    "lastname": "Doe"
-                },
-                "links": {
-                    "self": "http://link-to-creator/1"
-                },
-                "relationships": {}
-            },
-            {
-                "type": "comment",
-                "id": "22208770-76dd-47e5-a1c4-4d0d9c2483ab",
-                "attributes": {
-                    "content": "Comment 2 content",
-                    "email": "john@doe.com"
-                },
-                "links": {
-                    "self": "http://link-to-comment/2"
-                },
-                "relationships": {}
-            },
-            {
-                "type": "comment",
-                "id": "cb0759b0-03ab-4291-b067-84a9017fea6f",
-                "attributes": {
-                    "content": "Comment 3 content",
-                    "email": "john@doe.com"
-                },
-                "links": {
-                    "self": "http://link-to-comment/3"
-                },
-                "relationships": {}
-            }
-        ]
-    }
-    """
-
-
-invalidPayloadWithoutAttributes : String
-invalidPayloadWithoutAttributes =
-    """
-    {
-        "data": [
-            {
-                "type": "posts",
-                "id": "13608770-76dd-47e5-a1c4-4d0d9c2483ad",
-                "links": {
-                    "self": "http://link-to-post/2"
-                },
-                "attributes-bad": {
-                    "title": "First post",
-                    "content": "First post content"
-                },
-                "relationships": {
-                    "creator": {
-                        "data": {
-                            "type": "creators",
-                            "id": "22208770-76dd-47e5-a1c4-4d0d9c2483ad"
-                        },
-                        "links": {
-                            "related": "http://link-to-creator/1"
-                        }
-                    },
-                    "comments": {
-                        "links": {},
-                        "data": [
-                            {
-                                "type": "comment",
-                                "id": "22208770-76dd-47e5-a1c4-4d0d9c2483ab"
-                            },
-                            {
-                                "type": "comment",
-                                "id": "cb0759b0-03ab-4291-b067-84a9017fea6f"
-                            }
-                        ]
-                    }
-                }
-            }
-        ],
-        "included": [
-            {
-                "type": "creators",
-                "id": "22208770-76dd-47e5-a1c4-4d0d9c2483ad",
-                "attributes": {
-                    "firstname": "John",
-                    "lastname": "Doe"
-                },
-                "links": {
-                    "self": "http://link-to-creator/1"
-                },
-                "relationships": {}
-            },
-            {
-                "type": "comment",
-                "id": "22208770-76dd-47e5-a1c4-4d0d9c2483ab",
-                "attributes": {
-                    "content": "Comment 2 content",
-                    "email": "john@doe.com"
-                },
-                "links": {
-                    "self": "http://link-to-comment/2"
-                },
-                "relationships": {}
-            },
-            {
-                "type": "comment",
-                "id": "cb0759b0-03ab-4291-b067-84a9017fea6f",
-                "attributes": {
-                    "content": "Comment 3 content",
-                    "email": "john@doe.com"
-                },
-                "links": {
-                    "self": "http://link-to-comment/3"
-                },
-                "relationships": {}
-            }
-        ]
-    }
-    """
-
-
-invalidPayloadWithoutId : String
-invalidPayloadWithoutId =
-    """
-    {
-        "data": [
-            {
-                "type": "posts",
-                "id-bad": "13608770-76dd-47e5-a1c4-4d0d9c2483ad",
-                "links": {
-                    "self": "http://link-to-post/2"
-                },
-                "attributes": {
-                    "title": "First post",
-                    "content": "First post content"
-                },
-                "relationships": {
-                    "creator": {
-                        "data": {
-                            "type": "creators",
-                            "id": "22208770-76dd-47e5-a1c4-4d0d9c2483ad"
-                        },
-                        "links": {
-                            "related": "http://link-to-creator/1"
-                        }
-                    },
-                    "comments": {
-                        "links": {},
-                        "data": [
-                            {
-                                "type": "comment",
-                                "id": "22208770-76dd-47e5-a1c4-4d0d9c2483ab"
-                            },
-                            {
-                                "type": "comment",
-                                "id": "cb0759b0-03ab-4291-b067-84a9017fea6f"
-                            }
-                        ]
-                    }
-                }
-            }
-        ],
-        "included": [
-            {
-                "type": "creators",
-                "id": "22208770-76dd-47e5-a1c4-4d0d9c2483ad",
-                "attributes": {
-                    "firstname": "John",
-                    "lastname": "Doe"
-                },
-                "links": {
-                    "self": "http://link-to-creator/1"
-                },
-                "relationships": {}
-            },
-            {
-                "type": "comment",
-                "id": "22208770-76dd-47e5-a1c4-4d0d9c2483ab",
-                "attributes": {
-                    "content": "Comment 2 content",
-                    "email": "john@doe.com"
-                },
-                "links": {
-                    "self": "http://link-to-comment/2"
-                },
-                "relationships": {}
-            },
-            {
-                "type": "comment",
-                "id": "cb0759b0-03ab-4291-b067-84a9017fea6f",
-                "attributes": {
-                    "content": "Comment 3 content",
-                    "email": "john@doe.com"
-                },
-                "links": {
-                    "self": "http://link-to-comment/3"
-                },
-                "relationships": {}
-            }
-        ]
-    }
-    """
-
-
-invalidPayloadWithoutType : String
-invalidPayloadWithoutType =
-    """
-    {
-        "data": [
-            {
-                "type-bad": "posts",
-                "id": "13608770-76dd-47e5-a1c4-4d0d9c2483ad",
-                "links": {
-                    "self": "http://link-to-post/2"
-                },
-                "attributes": {
-                    "title": "First post",
-                    "content": "First post content"
-                },
-                "relationships": {
-                    "creator": {
-                        "data": {
-                            "type": "creators",
-                            "id": "22208770-76dd-47e5-a1c4-4d0d9c2483ad"
-                        },
-                        "links": {
-                            "related": "http://link-to-creator/1"
-                        }
-                    },
-                    "comments": {
-                        "links": {},
-                        "data": [
-                            {
-                                "type": "comment",
-                                "id": "22208770-76dd-47e5-a1c4-4d0d9c2483ab"
-                            },
-                            {
-                                "type": "comment",
-                                "id": "cb0759b0-03ab-4291-b067-84a9017fea6f"
-                            }
-                        ]
-                    }
-                }
-            }
-        ],
-        "included": [
-            {
-                "type": "creators",
-                "id": "22208770-76dd-47e5-a1c4-4d0d9c2483ad",
-                "attributes": {
-                    "firstname": "John",
-                    "lastname": "Doe"
-                },
-                "links": {
-                    "self": "http://link-to-creator/1"
-                },
-                "relationships": {}
-            },
-            {
-                "type": "comment",
-                "id": "22208770-76dd-47e5-a1c4-4d0d9c2483ab",
-                "attributes": {
-                    "content": "Comment 2 content",
-                    "email": "john@doe.com"
-                },
-                "links": {
-                    "self": "http://link-to-comment/2"
-                },
-                "relationships": {}
-            },
-            {
-                "type": "comment",
-                "id": "cb0759b0-03ab-4291-b067-84a9017fea6f",
-                "attributes": {
-                    "content": "Comment 3 content",
-                    "email": "john@doe.com"
-                },
-                "links": {
-                    "self": "http://link-to-comment/3"
-                },
-                "relationships": {}
-            }
-        ]
-    }
-    """
-
-
-invalidPayloadWithoutRelationshipInRelationships : String
-invalidPayloadWithoutRelationshipInRelationships =
-    """
-    {
-        "data": [
-            {
-                "type": "posts",
-                "id": "13608770-76dd-47e5-a1c4-4d0d9c2483ad",
-                "links": {
-                    "self": "http://link-to-post/2"
-                },
-                "attributes": {
-                    "title": "First post",
-                    "content": "First post content"
-                },
-                "relationships": {
-                    "creator-bad": {
-                        "data": {
-                            "type": "creators",
-                            "id": "22208770-76dd-47e5-a1c4-4d0d9c2483ad"
-                        },
-                        "links": {
-                            "related": "http://link-to-creator/1"
-                        }
-                    },
-                    "comments": {
-                        "links": {},
-                        "data": [
-                            {
-                                "type": "comment",
-                                "id": "22208770-76dd-47e5-a1c4-4d0d9c2483ab"
-                            },
-                            {
-                                "type": "comment",
-                                "id": "cb0759b0-03ab-4291-b067-84a9017fea6f"
-                            }
-                        ]
-                    }
-                }
-            }
-        ],
-        "included": [
-            {
-                "type": "creators",
-                "id": "22208770-76dd-47e5-a1c4-4d0d9c2483ad",
-                "attributes": {
-                    "firstname": "John",
-                    "lastname": "Doe"
-                },
-                "links": {
-                    "self": "http://link-to-creator/1"
-                },
-                "relationships": {}
-            },
-            {
-                "type": "comment",
-                "id": "22208770-76dd-47e5-a1c4-4d0d9c2483ab",
-                "attributes": {
-                    "content": "Comment 2 content",
-                    "email": "john@doe.com"
-                },
-                "links": {
-                    "self": "http://link-to-comment/2"
-                },
-                "relationships": {}
-            },
-            {
-                "type": "comment",
-                "id": "cb0759b0-03ab-4291-b067-84a9017fea6f",
-                "attributes": {
-                    "content": "Comment 3 content",
-                    "email": "john@doe.com"
-                },
-                "links": {
-                    "self": "http://link-to-comment/3"
-                },
-                "relationships": {}
-            }
-        ]
-    }
-    """
-
-
-invalidPayloadWithoutRelationshipIdNotFound : String
-invalidPayloadWithoutRelationshipIdNotFound =
-    """
-    {
-        "data": [
-            {
-                "type": "posts",
-                "id": "13608770-76dd-47e5-a1c4-4d0d9c2483ad",
-                "links": {
-                    "self": "http://link-to-post/2"
-                },
-                "attributes": {
-                    "title": "First post",
-                    "content": "First post content"
-                },
-                "relationships": {
-                    "creator": {
-                        "data": {
-                            "type": "creators",
-                            "id": "bad"
-                        },
-                        "links": {
-                            "related": "http://link-to-creator/1"
-                        }
-                    },
-                    "comments": {
-                        "links": {},
-                        "data": [
-                            {
-                                "type": "comment",
-                                "id": "22208770-76dd-47e5-a1c4-4d0d9c2483ab"
-                            },
-                            {
-                                "type": "comment",
-                                "id": "cb0759b0-03ab-4291-b067-84a9017fea6f"
-                            }
-                        ]
-                    }
-                }
-            }
-        ],
-        "included": [
-            {
-                "type": "creators",
-                "id": "22208770-76dd-47e5-a1c4-4d0d9c2483ad",
-                "attributes": {
-                    "firstname": "John",
-                    "lastname": "Doe"
-                },
-                "links": {
-                    "self": "http://link-to-creator/1"
-                },
-                "relationships": {}
-            },
-            {
-                "type": "comment",
-                "id": "22208770-76dd-47e5-a1c4-4d0d9c2483ab",
-                "attributes": {
-                    "content": "Comment 2 content",
-                    "email": "john@doe.com"
-                },
-                "links": {
-                    "self": "http://link-to-comment/2"
-                },
-                "relationships": {}
-            },
-            {
-                "type": "comment",
-                "id": "cb0759b0-03ab-4291-b067-84a9017fea6f",
-                "attributes": {
-                    "content": "Comment 3 content",
-                    "email": "john@doe.com"
-                },
-                "links": {
-                    "self": "http://link-to-comment/3"
-                },
-                "relationships": {}
-            }
-        ]
-    }
-    """
-
-
-invalidPayloadWithoutRelationshipTypeNotFound : String
-invalidPayloadWithoutRelationshipTypeNotFound =
-    """
-    {
-        "data": [
-            {
-                "type": "posts",
-                "id": "13608770-76dd-47e5-a1c4-4d0d9c2483ad",
-                "links": {
-                    "self": "http://link-to-post/2"
-                },
-                "attributes": {
-                    "title": "First post",
-                    "content": "First post content"
-                },
-                "relationships": {
-                    "creator": {
-                        "data": {
-                            "type": "creators-bad",
-                            "id": "22208770-76dd-47e5-a1c4-4d0d9c2483ad"
-                        },
-                        "links": {
-                            "related": "http://link-to-creator/1"
-                        }
-                    },
-                    "comments": {
-                        "links": {},
-                        "data": [
-                            {
-                                "type": "comment",
-                                "id": "22208770-76dd-47e5-a1c4-4d0d9c2483ab"
-                            },
-                            {
-                                "type": "comment",
-                                "id": "cb0759b0-03ab-4291-b067-84a9017fea6f"
-                            }
-                        ]
-                    }
-                }
-            }
-        ],
-        "included": [
-            {
-                "type": "creators",
-                "id": "22208770-76dd-47e5-a1c4-4d0d9c2483ad",
-                "attributes": {
-                    "firstname": "John",
-                    "lastname": "Doe"
-                },
-                "links": {
-                    "self": "http://link-to-creator/1"
-                },
-                "relationships": {}
-            },
-            {
-                "type": "comment",
-                "id": "22208770-76dd-47e5-a1c4-4d0d9c2483ab",
-                "attributes": {
-                    "content": "Comment 2 content",
-                    "email": "john@doe.com"
-                },
-                "links": {
-                    "self": "http://link-to-comment/2"
-                },
-                "relationships": {}
-            },
-            {
-                "type": "comment",
-                "id": "cb0759b0-03ab-4291-b067-84a9017fea6f",
-                "attributes": {
-                    "content": "Comment 3 content",
-                    "email": "john@doe.com"
-                },
-                "links": {
-                    "self": "http://link-to-comment/3"
-                },
-                "relationships": {}
-            }
-        ]
-    }
-    """
-
-
-invalidPayloadWithoutRelationshipInIncluded : String
-invalidPayloadWithoutRelationshipInIncluded =
-    """
-    {
-        "data": [
-            {
-                "type": "posts",
-                "id": "13608770-76dd-47e5-a1c4-4d0d9c2483ad",
-                "links": {
-                    "self": "http://link-to-post/2"
-                },
-                "attributes": {
-                    "title": "First post",
-                    "content": "First post content"
-                },
-                "relationships": {
-                    "creator": {
-                        "data": {
-                            "type": "creators",
-                            "id": "22208770-76dd-47e5-a1c4-4d0d9c2483ad"
-                        },
-                        "links": {
-                            "related": "http://link-to-creator/1"
-                        }
-                    },
-                    "comments": {
-                        "links": {},
-                        "data": [
-                            {
-                                "type": "comment",
-                                "id": "22208770-76dd-47e5-a1c4-4d0d9c2483ab"
-                            },
-                            {
-                                "type": "comment",
-                                "id": "cb0759b0-03ab-4291-b067-84a9017fea6f"
-                            }
-                        ]
-                    }
-                }
-            }
-        ],
-        "included": [
-            {
-                "type": "creators-bad",
-                "id": "22208770-76dd-47e5-a1c4-4d0d9c2483ad",
-                "attributes": {
-                    "firstname": "John",
-                    "lastname": "Doe"
-                },
-                "links": {
-                    "self": "http://link-to-creator/1"
-                },
-                "relationships": {}
-            },
-            {
-                "type": "comment",
-                "id": "22208770-76dd-47e5-a1c4-4d0d9c2483ab",
-                "attributes": {
-                    "content": "Comment 2 content",
-                    "email": "john@doe.com"
-                },
-                "links": {
-                    "self": "http://link-to-comment/2"
-                },
-                "relationships": {}
-            },
-            {
-                "type": "comment",
-                "id": "cb0759b0-03ab-4291-b067-84a9017fea6f",
-                "attributes": {
-                    "content": "Comment 3 content",
-                    "email": "john@doe.com"
-                },
-                "links": {
-                    "self": "http://link-to-comment/3"
-                },
-                "relationships": {}
-            }
-        ]
-    }
-    """
-
-
-invalidPayloadWithoutRelationships : String
-invalidPayloadWithoutRelationships =
-    """
-    {
-        "data": [
-            {
-                "type": "posts",
-                "id": "13608770-76dd-47e5-a1c4-4d0d9c2483ad",
-                "links": {
-                    "self": "http://link-to-post/2"
-                },
-                "attributes": {
-                    "title": "First post",
-                    "content": "First post content"
-                },
-                "relationships-bad": {
-                    "creator": {
-                        "data": {
-                            "type": "creators",
-                            "id": "22208770-76dd-47e5-a1c4-4d0d9c2483ad"
-                        },
-                        "links": {
-                            "related": "http://link-to-creator/1"
-                        }
-                    },
-                    "comments": {
-                        "links": {},
-                        "data": [
-                            {
-                                "type": "comment",
-                                "id": "22208770-76dd-47e5-a1c4-4d0d9c2483ab"
-                            },
-                            {
-                                "type": "comment",
-                                "id": "cb0759b0-03ab-4291-b067-84a9017fea6f"
-                            }
-                        ]
-                    }
-                }
-            }
-        ],
-        "included": [
-            {
-                "type": "creators",
-                "id": "22208770-76dd-47e5-a1c4-4d0d9c2483ad",
-                "attributes": {
-                    "firstname": "John",
-                    "lastname": "Doe"
-                },
-                "links": {
-                    "self": "http://link-to-creator/1"
-                },
-                "relationships": {}
-            },
-            {
-                "type": "comment",
-                "id": "22208770-76dd-47e5-a1c4-4d0d9c2483ab",
-                "attributes": {
-                    "content": "Comment 2 content",
-                    "email": "john@doe.com"
-                },
-                "links": {
-                    "self": "http://link-to-comment/2"
-                },
-                "relationships": {}
-            },
-            {
-                "type": "comment",
-                "id": "cb0759b0-03ab-4291-b067-84a9017fea6f",
-                "attributes": {
-                    "content": "Comment 3 content",
-                    "email": "john@doe.com"
-                },
-                "links": {
-                    "self": "http://link-to-comment/3"
-                },
-                "relationships": {}
-            }
-        ]
-    }
-    """
-
-
-invalidPayloadWithoutCreatorAttributes : String
-invalidPayloadWithoutCreatorAttributes =
-    """
-    {
-        "data": [
-            {
-                "type": "posts",
-                "id": "13608770-76dd-47e5-a1c4-4d0d9c2483ad",
-                "links": {
-                    "self": "http://link-to-post/2"
-                },
-                "attributes": {
-                    "title": "First post",
-                    "content": "First post content"
-                },
-                "relationships": {
-                    "creator": {
-                        "data": {
-                            "type": "creators",
-                            "id": "22208770-76dd-47e5-a1c4-4d0d9c2483ad"
-                        },
-                        "links": {
-                            "related": "http://link-to-creator/1"
-                        }
-                    },
-                    "comments": {
-                        "links": {},
-                        "data": [
-                            {
-                                "type": "comment",
-                                "id": "22208770-76dd-47e5-a1c4-4d0d9c2483ab"
-                            },
-                            {
-                                "type": "comment",
-                                "id": "cb0759b0-03ab-4291-b067-84a9017fea6f"
-                            }
-                        ]
-                    }
-                }
-            }
-        ],
-        "included": [
-            {
-                "type": "creators",
-                "id": "22208770-76dd-47e5-a1c4-4d0d9c2483ad",
-                "attributes-bad": {
-                    "firstname": "John",
-                    "lastname": "Doe"
-                },
-                "links": {
-                    "self": "http://link-to-creator/1"
-                },
-                "relationships": {}
-            },
-            {
-                "type": "comment",
-                "id": "22208770-76dd-47e5-a1c4-4d0d9c2483ab",
-                "attributes": {
-                    "content": "Comment 2 content",
-                    "email": "john@doe.com"
-                },
-                "links": {
-                    "self": "http://link-to-comment/2"
-                },
-                "relationships": {}
-            },
-            {
-                "type": "comment",
-                "id": "cb0759b0-03ab-4291-b067-84a9017fea6f",
-                "attributes": {
-                    "content": "Comment 3 content",
-                    "email": "john@doe.com"
-                },
-                "links": {
-                    "self": "http://link-to-comment/3"
-                },
-                "relationships": {}
-            }
-        ]
-    }
-    """
-
-
-invalidPayloadWithoutCreatorId : String
-invalidPayloadWithoutCreatorId =
-    """
-    {
-        "data": [
-            {
-                "type": "posts",
-                "id": "13608770-76dd-47e5-a1c4-4d0d9c2483ad",
-                "links": {
-                    "self": "http://link-to-post/2"
-                },
-                "attributes": {
-                    "title": "First post",
-                    "content": "First post content"
-                },
-                "relationships": {
-                    "creator": {
-                        "data": {
-                            "type": "creators",
-                            "id": "22208770-76dd-47e5-a1c4-4d0d9c2483ad"
-                        },
-                        "links": {
-                            "related": "http://link-to-creator/1"
-                        }
-                    },
-                    "comments": {
-                        "links": {},
-                        "data": [
-                            {
-                                "type": "comment",
-                                "id": "22208770-76dd-47e5-a1c4-4d0d9c2483ab"
-                            },
-                            {
-                                "type": "comment",
-                                "id": "cb0759b0-03ab-4291-b067-84a9017fea6f"
-                            }
-                        ]
-                    }
-                }
-            }
-        ],
-        "included": [
-            {
-                "type": "creators",
-                "id-bad": "22208770-76dd-47e5-a1c4-4d0d9c2483ad",
-                "attributes": {
-                    "firstname": "John",
-                    "lastname": "Doe"
-                },
-                "links": {
-                    "self": "http://link-to-creator/1"
-                },
-                "relationships": {}
-            },
-            {
-                "type": "comment",
-                "id": "22208770-76dd-47e5-a1c4-4d0d9c2483ab",
-                "attributes": {
-                    "content": "Comment 2 content",
-                    "email": "john@doe.com"
-                },
-                "links": {
-                    "self": "http://link-to-comment/2"
-                },
-                "relationships": {}
-            },
-            {
-                "type": "comment",
-                "id": "cb0759b0-03ab-4291-b067-84a9017fea6f",
-                "attributes": {
-                    "content": "Comment 3 content",
-                    "email": "john@doe.com"
-                },
-                "links": {
-                    "self": "http://link-to-comment/3"
-                },
-                "relationships": {}
-            }
-        ]
-    }
-    """
-
-
-invalidPayloadWithoutCreatorType : String
-invalidPayloadWithoutCreatorType =
-    """
-    {
-        "data": [
-            {
-                "type": "posts",
-                "id": "13608770-76dd-47e5-a1c4-4d0d9c2483ad",
-                "links": {
-                    "self": "http://link-to-post/2"
-                },
-                "attributes": {
-                    "title": "First post",
-                    "content": "First post content"
-                },
-                "relationships": {
-                    "creator": {
-                        "data": {
-                            "type": "creators",
-                            "id": "22208770-76dd-47e5-a1c4-4d0d9c2483ad"
-                        },
-                        "links": {
-                            "related": "http://link-to-creator/1"
-                        }
-                    },
-                    "comments": {
-                        "links": {},
-                        "data": [
-                            {
-                                "type": "comment",
-                                "id": "22208770-76dd-47e5-a1c4-4d0d9c2483ab"
-                            },
-                            {
-                                "type": "comment",
-                                "id": "cb0759b0-03ab-4291-b067-84a9017fea6f"
-                            }
-                        ]
-                    }
-                }
-            }
-        ],
-        "included": [
-            {
-                "type-bad": "creators",
-                "id": "22208770-76dd-47e5-a1c4-4d0d9c2483ad",
-                "attributes": {
-                    "firstname": "John",
-                    "lastname": "Doe"
-                },
-                "links": {
-                    "self": "http://link-to-creator/1"
-                },
-                "relationships": {}
-            },
-            {
-                "type": "comment",
-                "id": "22208770-76dd-47e5-a1c4-4d0d9c2483ab",
-                "attributes": {
-                    "content": "Comment 2 content",
-                    "email": "john@doe.com"
-                },
-                "links": {
-                    "self": "http://link-to-comment/2"
-                },
-                "relationships": {}
-            },
-            {
-                "type": "comment",
-                "id": "cb0759b0-03ab-4291-b067-84a9017fea6f",
-                "attributes": {
-                    "content": "Comment 3 content",
-                    "email": "john@doe.com"
-                },
-                "links": {
-                    "self": "http://link-to-comment/3"
-                },
-                "relationships": {}
-            }
-        ]
-    }
-    """
-
-
-invalidPayloadWithoutCreatorRelationships : String
-invalidPayloadWithoutCreatorRelationships =
-    """
-    {
-        "data": [
-            {
-                "type": "posts",
-                "id": "13608770-76dd-47e5-a1c4-4d0d9c2483ad",
-                "links": {
-                    "self": "http://link-to-post/2"
-                },
-                "attributes": {
-                    "title": "First post",
-                    "content": "First post content"
-                },
-                "relationships": {
-                    "creator": {
-                        "data": {
-                            "type": "creators",
-                            "id": "22208770-76dd-47e5-a1c4-4d0d9c2483ad"
-                        },
-                        "links": {
-                            "related": "http://link-to-creator/1"
-                        }
-                    },
-                    "comments": {
-                        "links": {},
-                        "data": [
-                            {
-                                "type": "comment",
-                                "id": "22208770-76dd-47e5-a1c4-4d0d9c2483ab"
-                            },
-                            {
-                                "type": "comment",
-                                "id": "cb0759b0-03ab-4291-b067-84a9017fea6f"
-                            }
-                        ]
-                    }
-                }
-            }
-        ],
-        "included": [
-            {
-                "type": "creators",
-                "id": "22208770-76dd-47e5-a1c4-4d0d9c2483ad",
-                "attributes": {
-                    "firstname": "John",
-                    "lastname": "Doe"
-                },
-                "links": {
-                    "self": "http://link-to-creator/1"
-                },
-                "relationships-bad": {}
-            },
-            {
-                "type": "comment",
-                "id": "22208770-76dd-47e5-a1c4-4d0d9c2483ab",
-                "attributes": {
-                    "content": "Comment 2 content",
-                    "email": "john@doe.com"
-                },
-                "links": {
-                    "self": "http://link-to-comment/2"
-                },
-                "relationships": {}
-            },
-            {
-                "type": "comment",
-                "id": "cb0759b0-03ab-4291-b067-84a9017fea6f",
-                "attributes": {
-                    "content": "Comment 3 content",
-                    "email": "john@doe.com"
-                },
-                "links": {
-                    "self": "http://link-to-comment/3"
-                },
-                "relationships": {}
-            }
-        ]
-    }
-    """
-
-
-invalidPayloadCreatorIsList : String
-invalidPayloadCreatorIsList =
-    """
-    {
-        "data": [
-            {
-                "type": "posts",
-                "id": "13608770-76dd-47e5-a1c4-4d0d9c2483ad",
-                "links": {
-                    "self": "http://link-to-post/2"
-                },
-                "attributes": {
-                    "title": "First post",
-                    "content": "First post content"
-                },
-                "relationships": {
-                    "creator": {
-                        "data": [
-                            "type": "creators",
-                            "id": "22208770-76dd-47e5-a1c4-4d0d9c2483ad"
-                        ],
-                        "links": {
-                            "related": "http://link-to-creator/1"
-                        }
-                    },
-                    "comments": {
-                        "links": {},
-                        "data": [
-                            {
-                                "type": "comment",
-                                "id": "22208770-76dd-47e5-a1c4-4d0d9c2483ab"
-                            },
-                            {
-                                "type": "comment",
-                                "id": "cb0759b0-03ab-4291-b067-84a9017fea6f"
-                            }
-                        ]
-                    }
-                }
-            }
-        ],
-        "included": [
-            {
-                "type": "creators",
-                "id": "22208770-76dd-47e5-a1c4-4d0d9c2483ad",
-                "attributes": {
-                    "firstname": "John",
-                    "lastname": "Doe"
-                },
-                "links": {
-                    "self": "http://link-to-creator/1"
-                },
-                "relationships": {}
-            },
-            {
-                "type": "comment",
-                "id": "22208770-76dd-47e5-a1c4-4d0d9c2483ab",
-                "attributes": {
-                    "content": "Comment 2 content",
-                    "email": "john@doe.com"
-                },
-                "links": {
-                    "self": "http://link-to-comment/2"
-                },
-                "relationships": {}
-            },
-            {
-                "type": "comment",
-                "id": "cb0759b0-03ab-4291-b067-84a9017fea6f",
-                "attributes": {
-                    "content": "Comment 3 content",
-                    "email": "john@doe.com"
-                },
-                "links": {
-                    "self": "http://link-to-comment/3"
-                },
-                "relationships": {}
-            }
-        ]
-    }
-    """
-
-
-invalidPayloadCommentsIsOneElement : String
-invalidPayloadCommentsIsOneElement =
-    """
-    {
-        "data": [
-            {
-                "type": "posts",
-                "id": "13608770-76dd-47e5-a1c4-4d0d9c2483ad",
-                "links": {
-                    "self": "http://link-to-post/2"
-                },
-                "attributes": {
-                    "title": "First post",
-                    "content": "First post content"
-                },
-                "relationships": {
-                    "creator": {
-                        "data": {
-                            "type": "creators",
-                            "id": "22208770-76dd-47e5-a1c4-4d0d9c2483ad"
-                        },
-                        "links": {
-                            "related": "http://link-to-creator/1"
-                        }
-                    },
-                    "comments": {
-                        "links": {},
-                        "data": {
-                            "type": "comment",
-                            "id": "22208770-76dd-47e5-a1c4-4d0d9c2483ab"
-                        }
-                    }
-                }
-            }
-        ],
-        "included": [
-            {
-                "type": "creators",
-                "id": "22208770-76dd-47e5-a1c4-4d0d9c2483ad",
-                "attributes": {
-                    "firstname": "John",
-                    "lastname": "Doe"
-                },
-                "links": {
-                    "self": "http://link-to-creator/1"
-                },
-                "relationships": {}
-            },
-            {
-                "type": "comment",
-                "id": "22208770-76dd-47e5-a1c4-4d0d9c2483ab",
-                "attributes": {
-                    "content": "Comment 2 content",
-                    "email": "john@doe.com"
-                },
-                "links": {
-                    "self": "http://link-to-comment/2"
-                },
-                "relationships": {}
-            },
-            {
-                "type": "comment",
-                "id": "cb0759b0-03ab-4291-b067-84a9017fea6f",
-                "attributes": {
-                    "content": "Comment 3 content",
-                    "email": "john@doe.com"
-                },
-                "links": {
-                    "self": "http://link-to-comment/3"
-                },
-                "relationships": {}
-            }
-        ]
-    }
-    """
