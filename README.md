@@ -1,4 +1,4 @@
-# jsonapi [![Build Status](https://travis-ci.org/FabienHenon/jsonapi.svg?branch=master)](https://travis-ci.org/FabienHenon/jsonapi)
+# jsonapi [![Build Status](https://travis-ci.org/FabienHenon/jsonapi-decode.svg?branch=master)](https://travis-ci.org/FabienHenon/jsonapi-decode)
 
 ```
 elm package install FabienHenon/jsonapi
