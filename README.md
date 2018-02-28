@@ -7,7 +7,7 @@ elm package install FabienHenon/jsonapi
 `JsonApi` allows you to decode and encode json content conforming to the [Json Api spec](http://jsonapi.org/).
 We can decode and encode resources and their relationships.
 
-## Getting started
+## Decoding resources
 
 ### Types
 First, you need to declare your types:
@@ -229,6 +229,99 @@ payload =
         ]
     }
     """
+```
+
+## Encoding resources
+
+### Types
+
+You first need to declare your types:
+
+```elm
+type alias Post =
+    { id : String
+    , links : Dict String String
+    , title : String
+    , content : String
+    , creator : Creator
+    , comments : List Comment
+    }
+
+
+type alias Creator =
+    { id : String
+    , links : Dict String String
+    , firstname : String
+    , lastname : String
+    }
+
+
+type alias Comment =
+    { id : String
+    , links : Dict String String
+    , content : String
+    , email : String
+    }
+```
+
+We will encode a list of `Post`s. Each `Post` containing a list of `Comment`s and a `Creator`.
+
+### `ResourceInfo` functions
+
+Then you will have to create a few functions to transform your data to `ResourceInfo`:
+
+```elm
+postToResource : Post -> ResourceInfo
+postToResource post =
+    JsonApi.build "posts"
+        |> JsonApi.withId post.id
+        |> JsonApi.withLinks post.links
+        |> JsonApi.withAttributes
+            [ ( "title", string post.title )
+            , ( "content", string post.content )
+            ]
+        |> JsonApi.withRelationship "creator" (JsonApi.relationship post.creator.id (creatorToResource post.creator))
+        |> JsonApi.withRelationship "comments" (JsonApi.relationships (List.map commentRelationship post.comments))
+
+
+creatorToResource : Creator -> ResourceInfo
+creatorToResource creator =
+    JsonApi.build "creators"
+        |> JsonApi.withId creator.id
+        |> JsonApi.withLinks creator.links
+        |> JsonApi.withAttributes
+            [ ( "firstname", string creator.firstname )
+            , ( "lastname", string creator.lastname )
+            ]
+
+
+commentRelationship : Comment -> ( String, ResourceInfo )
+commentRelationship comment =
+    ( comment.id, commentToResource comment )
+
+
+commentToResource : Comment -> ResourceInfo
+commentToResource comment =
+    JsonApi.build "comment"
+        |> JsonApi.withId comment.id
+        |> JsonApi.withLinks comment.links
+        |> JsonApi.withAttributes
+            [ ( "content", string comment.content )
+            , ( "email", string comment.email )
+            ]
+```
+
+We have a function that transforms a `Post` object to a `ResourceInfo`, a `Creator` to a `ResourceInfo` and a `Comment` to a `ResourceInfo`.
+Because we have many `Comment`s in a `Post` we will need a small function to creator our `commentRelationship`.
+
+### Encoding
+
+Finally, once you have your data you can encode it:
+
+```elm
+encode : List Post -> String
+encode posts =
+    Encode.resources (List.map postToResource posts) |> Json.Encode.encode 0
 ```
 
 ## Examples
