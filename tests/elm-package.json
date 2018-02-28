@@ -9,7 +9,8 @@
     ],
     "exposed-modules": [
         "JsonApi",
-        "JsonApi.Decode"
+        "JsonApi.Decode",
+        "JsonApi.Encode"
     ],
     "dependencies": {
         "eeue56/elm-html-test": "5.1.2 <= v < 6.0.0",

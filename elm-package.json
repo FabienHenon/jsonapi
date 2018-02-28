@@ -8,7 +8,8 @@
     ],
     "exposed-modules": [
         "JsonApi",
-        "JsonApi.Decode"
+        "JsonApi.Decode",
+        "JsonApi.Encode"
     ],
     "dependencies": {
         "elm-lang/core": "5.0.0 <= v < 6.0.0",

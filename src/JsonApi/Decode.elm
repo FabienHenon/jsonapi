@@ -336,7 +336,7 @@ filterDataType dataType decoder info =
 resourceInfoInternalDecoder : List ResourceInfo -> Decoder Internal.ResourceInfoInternal
 resourceInfoInternalDecoder included =
     succeed (Internal.ResourceInfoInternal included)
-        |: (field "id" string)
+        |: (field "id" string |> map Just)
         |: (oneOf [ field "links" linksDecoder, succeed Dict.empty ])
         |: (field "type" string)
         |: (oneOf [ field "relationships" resourceRelationshipsDecoder, succeed Dict.empty ])
@@ -409,7 +409,7 @@ findRelationships included oneOrMoreRelationshipData =
 
 isGoodRelationship : Internal.RelationshipData -> ResourceInfo -> Bool
 isGoodRelationship relationshipData (Internal.ResourceInfo { id, type_ }) =
-    id == relationshipData.id && type_ == relationshipData.type_
+    id == (Just relationshipData.id) && type_ == relationshipData.type_
 
 
 includedDecoder : Decoder (List ResourceInfo)
