@@ -1,5 +1,5 @@
 {
-    "version": "1.0.0",
+    "version": "1.1.0",
     "summary": "JsonAPI decoder and encoder functions",
     "repository": "https://github.com/FabienHenon/jsonapi.git",
     "license": "BSD3",
@@ -12,9 +12,9 @@
         "JsonApi.Encode"
     ],
     "dependencies": {
-        "elm-lang/core": "5.0.0 <= v < 6.0.0",
+        "elm-community/json-extra": "2.6.0 <= v < 3.0.0",
         "elm-community/list-extra": "7.1.0 <= v < 8.0.0",
-        "elm-community/json-extra": "2.6.0 <= v < 3.0.0"
+        "elm-lang/core": "5.0.0 <= v < 6.0.0"
     },
     "elm-version": "0.18.0 <= v < 0.19.0"
 }
