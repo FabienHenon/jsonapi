@@ -1450,3 +1450,23 @@ dataIsList =
         ]
     }
     """
+
+
+commentWithoutIncluded : String
+commentWithoutIncluded =
+    """
+    {
+        "data": {
+            "type": "comments",
+            "id": "22208770-76dd-47e5-a1c4-4d0d9c2483ab",
+            "attributes": {
+                "content": "Comment content",
+                "email": "john@doe.com"
+            },
+            "links": {
+                "self": "http://link-to-comment/2"
+            },
+            "relationships": {}
+        }
+    }
+    """

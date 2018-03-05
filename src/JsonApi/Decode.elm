@@ -268,7 +268,7 @@ Here is an example of resource `Decoder`:
 -}
 resources : String -> (ResourceInfo -> Decoder a) -> Decoder (List a)
 resources type_ decoder =
-    field "included" includedDecoder
+    oneOf [ field "included" includedDecoder, succeed [] ]
         |> andThen (resourcesDataDecoder type_ decoder)
 
 
@@ -300,7 +300,7 @@ Here is an example of resource `Decoder`:
 -}
 resource : String -> (ResourceInfo -> Decoder a) -> Decoder a
 resource type_ decoder =
-    field "included" includedDecoder
+    oneOf [ field "included" includedDecoder, succeed [] ]
         |> andThen (resourceDataDecoder type_ decoder)
 
 

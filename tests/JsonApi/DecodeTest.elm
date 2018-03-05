@@ -294,5 +294,16 @@ suite =
                 \() ->
                     decodeString (Decode.resource "posts" postDecoder) Resource.dataIsList
                         |> Expect.err
+            , test "included is not needed" <|
+                \() ->
+                    case decodeString (Decode.resource "comments" commentDecoder) Resource.commentWithoutIncluded of
+                        Ok resource ->
+                            Expect.all
+                                [ .content >> Expect.equal "Comment content"
+                                ]
+                                resource
+
+                        Err error ->
+                            Expect.fail error
             ]
         ]
