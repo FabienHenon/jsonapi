@@ -22,6 +22,15 @@ suite =
                         , getInternal .relationships >> Dict.toList >> Expect.equalLists []
                         , getInternal .included >> Expect.equalLists []
                         ]
+        , test "fromResourceInfo has resourceInfo information plus new type" <|
+            \() ->
+                build "test"
+                    |> JsonApi.withId "test-id"
+                    |> JsonApi.fromResourceInfo "new-test"
+                    |> Expect.all
+                        [ id >> Expect.equal "test-id"
+                        , getInternal .type_ >> Expect.equal "new-test"
+                        ]
         , test "resource info with id has an id" <|
             \() ->
                 build "test"

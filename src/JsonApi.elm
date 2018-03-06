@@ -1,4 +1,4 @@
-module JsonApi exposing (ResourceInfo, OneOrManyRelationships, id, links, withId, withLinks, withAttributes, withRelationship, build, relationship, relationships)
+module JsonApi exposing (ResourceInfo, OneOrManyRelationships, id, links, withId, withLinks, withAttributes, withRelationship, build, relationship, relationships, fromResourceInfo)
 
 {-| JsonApi exposes the `ResourceInfo` type and functions to get and set information
 for your resources.
@@ -11,7 +11,7 @@ for your resources.
 
 # New resource
 
-@docs build
+@docs build, fromResourceInfo
 
 
 # Getter functions
@@ -129,6 +129,20 @@ You can build your resources like this:
 build : String -> ResourceInfo
 build type_ =
     Internal.ResourceInfo (Internal.build type_)
+
+
+{-| Builds a new `ResourceInfo` from the specified `ResourceInfo` and with the specified type name
+
+You can build your resources like this:
+
+    myResource : ResourceInfo -> ResourceInfo
+    myResource resourceInfo =
+        fromResourceInfo "posts" resourceInfo
+
+-}
+fromResourceInfo : String -> ResourceInfo -> ResourceInfo
+fromResourceInfo type_ (Internal.ResourceInfo info) =
+    Internal.ResourceInfo { info | type_ = type_ }
 
 
 {-| Sets the id of the `ResourceInfo` object
