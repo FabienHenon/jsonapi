@@ -365,6 +365,7 @@ resourceOneOrMoreRelationshipDataDecoder =
     oneOf
         [ resourceRelationshipDataDecoder |> map Internal.One
         , list resourceRelationshipDataDecoder |> map Internal.Many
+        , succeed Internal.NoRelationship
         ]
 
 
@@ -382,6 +383,9 @@ findRelationship included oneOrMoreRelationshipData =
             List.Extra.find (isGoodRelationship relationshipData) included
 
         Internal.Many _ ->
+            Nothing
+
+        Internal.NoRelationship ->
             Nothing
 
 
@@ -405,6 +409,9 @@ findRelationships included oneOrMoreRelationshipData =
                     )
                     (Just [])
                 |> Maybe.map List.reverse
+
+        Internal.NoRelationship ->
+            Nothing
 
 
 isGoodRelationship : Internal.RelationshipData -> ResourceInfo -> Bool

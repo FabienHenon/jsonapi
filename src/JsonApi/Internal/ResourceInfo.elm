@@ -21,7 +21,8 @@ type alias ResourceInfoInternal =
 
 
 type OneOrMoreRelationshipData
-    = One RelationshipData
+    = NoRelationship
+    | One RelationshipData
     | Many (List RelationshipData)
 
 

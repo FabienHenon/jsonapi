@@ -5,7 +5,6 @@ import Test exposing (..)
 import JsonApi.Decode as Decode
 import JsonApi.Data.ResourcesPayloads as Resources
 import JsonApi.Data.ResourcePayloads as Resource
-import JsonApi exposing (ResourceInfo)
 import Json.Decode exposing (Decoder, field, string, succeed, decodeString, map4, map6)
 import Dict exposing (Dict)
 import JsonApi.Data.Posts exposing (..)
@@ -50,6 +49,26 @@ suite =
                                 , List.map .content >> Expect.equalLists [ "First post content" ]
                                 , List.map (.creator >> .firstname) >> Expect.equalLists [ "John" ]
                                 , List.map (.creator >> .lastname) >> Expect.equalLists [ "Doe" ]
+                                , List.map (.comments >> List.map .content) >> Expect.equalLists [ [ "Comment 2 content", "Comment 3 content" ] ]
+                                ]
+                                resources
+
+                        Err error ->
+                            Expect.fail error
+            , test "decode success with null relationship" <|
+                \() ->
+                    case decodeString (Decode.resources "posts" postDecoderWithoutCreator) Resources.validPayloadWithNullRelationship of
+                        Ok resources ->
+                            Expect.all
+                                [ List.map .id >> Expect.equalLists [ "13608770-76dd-47e5-a1c4-4d0d9c2483ad" ]
+                                , List.map (.links >> Dict.toList)
+                                    >> Expect.equalLists
+                                        [ [ ( "self", "http://link-to-post/1" ) ]
+                                        ]
+                                , List.map .title >> Expect.equalLists [ "First post" ]
+                                , List.map .content >> Expect.equalLists [ "First post content" ]
+                                , List.map (.creator >> .firstname) >> Expect.equalLists [ "Fake" ]
+                                , List.map (.creator >> .lastname) >> Expect.equalLists [ "Fake" ]
                                 , List.map (.comments >> List.map .content) >> Expect.equalLists [ [ "Comment 2 content", "Comment 3 content" ] ]
                                 ]
                                 resources

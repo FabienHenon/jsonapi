@@ -11,7 +11,7 @@ encode it to a json api string with `Json.Encode.encode`.
 -}
 
 import JsonApi exposing (ResourceInfo, OneOrManyRelationships)
-import Json.Encode exposing (Value, object, list, string)
+import Json.Encode exposing (Value, object, list, string, null)
 import JsonApi.Internal.ResourceInfo as Internal
 import Dict exposing (Dict)
 
@@ -329,6 +329,9 @@ encodeRelationshipOneOrMoreData data =
 
         Internal.Many d ->
             list (List.map encodeOneRelationshipData d)
+
+        Internal.NoRelationship ->
+            null
 
 
 encodeOneRelationshipData : Internal.RelationshipData -> Value

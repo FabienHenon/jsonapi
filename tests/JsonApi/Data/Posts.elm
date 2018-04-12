@@ -1,7 +1,7 @@
 module JsonApi.Data.Posts exposing (..)
 
 import Dict exposing (Dict)
-import Json.Decode exposing (Decoder, field, string, succeed, decodeString, map4, map6)
+import Json.Decode exposing (Decoder, field, string, succeed, decodeString, map4, map6, oneOf)
 import JsonApi.Decode as Decode
 import JsonApi exposing (ResourceInfo)
 
@@ -122,6 +122,26 @@ postDecoder resourceInfo =
         (field "content" string)
         (Decode.relationship "creator" resourceInfo creatorDecoder)
         (Decode.relationships "comments" resourceInfo commentDecoder)
+
+
+postDecoderWithoutCreator : ResourceInfo -> Decoder Post
+postDecoderWithoutCreator resourceInfo =
+    map6 Post
+        (succeed (JsonApi.id resourceInfo))
+        (succeed (JsonApi.links resourceInfo))
+        (field "title" string)
+        (field "content" string)
+        (oneOf [ Decode.relationship "creator" resourceInfo creatorDecoder, succeed fakeUser ])
+        (Decode.relationships "comments" resourceInfo commentDecoder)
+
+
+fakeUser : Creator
+fakeUser =
+    { id = "creator-1"
+    , links = Dict.fromList [ ( "self", "http://url-to-creator/1" ) ]
+    , firstname = "Fake"
+    , lastname = "Fake"
+    }
 
 
 badCreatorDecoder : ResourceInfo -> Decoder Creator
