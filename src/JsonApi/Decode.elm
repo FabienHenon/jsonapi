@@ -189,7 +189,7 @@ relationship type_ (Internal.ResourceInfo info) decoder =
         |> Maybe.map .data
         |> Maybe.andThen (findRelationship info.included)
         |> Maybe.map (decodeRelationship decoder)
-        |> Maybe.withDefault (fail "Relationship not found")
+        |> Maybe.withDefault (fail ("Relationship " ++ type_ ++ " not found"))
 
 
 {-| Decode a list of relationships from your json api resources.
@@ -239,7 +239,7 @@ relationships type_ (Internal.ResourceInfo info) decoder =
         |> Maybe.map (.data)
         |> Maybe.andThen (findRelationships info.included)
         |> Maybe.map (decodeRelationships decoder)
-        |> Maybe.withDefault (fail "Relationships not found")
+        |> Maybe.withDefault (fail ("Relationships for " ++ type_ ++ " not found"))
 
 
 {-| Decode resources from the json api content.
@@ -317,7 +317,7 @@ resourcesDataDecoder type_ decoder included =
 resourceDataDecoder : String -> (ResourceInfo -> Decoder a) -> List ResourceInfo -> Decoder a
 resourceDataDecoder type_ decoder included =
     field "data" (dataDecoder type_ decoder included)
-        |> andThen (Maybe.map succeed >> Maybe.withDefault (fail "data type not found"))
+        |> andThen (Maybe.map succeed >> Maybe.withDefault (fail ("data type " ++ type_ ++ " not found")))
 
 
 dataDecoder : String -> (ResourceInfo -> Decoder a) -> List ResourceInfo -> Decoder (Maybe a)
