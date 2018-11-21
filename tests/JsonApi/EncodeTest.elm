@@ -1,14 +1,14 @@
-module JsonApi.EncodeTest exposing (..)
+module JsonApi.EncodeTest exposing (Group, Included, commentRelationship, commentToResource, creatorToResource, group, groupToResource, includedDecoder, postRelationship, postToResource, postToResourceWithoutAttributes, postToResourceWithoutId, postToResourceWithoutLinks, postToResourceWithoutRelationship, suite)
 
-import Expect exposing (Expectation)
-import Test exposing (..)
-import JsonApi.Encode as Encode
-import JsonApi.Decode as Decode
-import JsonApi exposing (ResourceInfo)
-import Json.Encode exposing (string, encode)
-import Json.Decode as JD exposing (decodeString, Decoder, list, field, map2)
 import Dict exposing (Dict)
+import Expect exposing (Expectation)
+import Json.Decode as JD exposing (Decoder, decodeString, field, list, map2, errorToString)
+import Json.Encode exposing (encode, string)
+import JsonApi exposing (ResourceInfo)
 import JsonApi.Data.Posts exposing (..)
+import JsonApi.Decode as Decode
+import JsonApi.Encode as Encode
+import Test exposing (..)
 
 
 suite : Test
@@ -35,7 +35,7 @@ suite =
                                 resources
 
                         Err error ->
-                            Expect.fail error
+                            Expect.fail (errorToString error)
             , test "encode resources with no relationship succeeds with decoder without relationship" <|
                 \() ->
                     case encode 0 (Encode.resources (List.map postToResourceWithoutRelationship posts)) |> decodeString (Decode.resources "posts" postWithoutRelationshipsDecoder) of
@@ -53,7 +53,7 @@ suite =
                                 resources
 
                         Err error ->
-                            Expect.fail error
+                            Expect.fail (errorToString error)
             , test "encode resources with no relationship fails with decoder with relationship" <|
                 \() ->
                     encode 0 (Encode.resources (List.map postToResourceWithoutRelationship posts))
@@ -76,7 +76,7 @@ suite =
                                 resources
 
                         Err error ->
-                            Expect.fail error
+                            Expect.fail (errorToString error)
             , test "encode resources with no attribute succeeds with decoder without attribute needed" <|
                 \() ->
                     case encode 0 (Encode.resources (List.map postToResourceWithoutAttributes posts)) |> decodeString (Decode.resources "posts" postWithoutAttributesDecoder) of
@@ -97,7 +97,7 @@ suite =
                                 resources
 
                         Err error ->
-                            Expect.fail error
+                            Expect.fail (errorToString error)
             , test "encode resources with no attribute fails with decoder with attribute" <|
                 \() ->
                     encode 0 (Encode.resources (List.map postToResourceWithoutAttributes posts))
@@ -131,7 +131,7 @@ suite =
                                 resource
 
                         Err error ->
-                            Expect.fail error
+                            Expect.fail (errorToString error)
             , test "encode resource with no relationship succeeds with decoder without relationship" <|
                 \() ->
                     case encode 0 (Encode.resource (postToResourceWithoutRelationship post2)) |> decodeString (Decode.resource "posts" postWithoutRelationshipsDecoder) of
@@ -145,7 +145,7 @@ suite =
                                 resource
 
                         Err error ->
-                            Expect.fail error
+                            Expect.fail (errorToString error)
             , test "encode resource with no relationship fails with decoder with relationship" <|
                 \() ->
                     encode 0 (Encode.resource (postToResourceWithoutRelationship post2))
@@ -164,7 +164,7 @@ suite =
                                 resource
 
                         Err error ->
-                            Expect.fail error
+                            Expect.fail (errorToString error)
             , test "encode resource with no attribute succeeds with decoder without attribute" <|
                 \() ->
                     case encode 0 (Encode.resource (postToResourceWithoutAttributes post2)) |> decodeString (Decode.resource "posts" postWithoutAttributesDecoder) of
@@ -181,7 +181,7 @@ suite =
                                 resource
 
                         Err error ->
-                            Expect.fail error
+                            Expect.fail (errorToString error)
             , test "encode resource with no attribute fails with decoder with attribute" <|
                 \() ->
                     encode 0 (Encode.resource (postToResourceWithoutAttributes post2))
@@ -211,7 +211,7 @@ suite =
                                     ]
 
                         Err error ->
-                            Expect.fail error
+                            Expect.fail (errorToString error)
             , test "relationships in relationships should be added in included" <|
                 \() ->
                     case encode 0 (Encode.resource (groupToResource group)) |> decodeString includedDecoder of
@@ -224,7 +224,7 @@ suite =
                                     ]
 
                         Err error ->
-                            Expect.fail error
+                            Expect.fail (errorToString error)
             ]
         ]
 
@@ -320,10 +320,10 @@ type alias Group =
 
 
 groupToResource : Group -> ResourceInfo
-groupToResource group =
+groupToResource group_ =
     JsonApi.build "groups"
         |> JsonApi.withAttributes
-            [ ( "name", string group.name ) ]
+            [ ( "name", string group_.name ) ]
         |> JsonApi.withRelationship "post" (JsonApi.relationships (List.map postRelationship group.posts))
 
 

@@ -1,11 +1,11 @@
-module JsonApi.ResourceInfoTest exposing (..)
+module JsonApi.ResourceInfoTest exposing (getInternal, suite)
 
-import JsonApi exposing (ResourceInfo, build, withId, withLinks, withAttributes, withRelationship, relationship, relationships, id, links)
-import Expect exposing (Expectation)
-import Test exposing (..)
-import JsonApi.Internal.ResourceInfo as Internal
 import Dict exposing (Dict)
+import Expect exposing (Expectation)
 import Json.Encode exposing (encode, object, string)
+import JsonApi exposing (ResourceInfo, build, id, links, relationship, relationships, withAttributes, withId, withLinks, withRelationship)
+import JsonApi.Internal.ResourceInfo as Internal
+import Test exposing (..)
 
 
 suite : Test
@@ -92,7 +92,7 @@ suite =
         , test "resource info with relationships has relationships and included" <|
             \() ->
                 build "test"
-                    |> withRelationship "test-rel" (relationships [ ( "rel-id-1", (build "rel-type-1") ), ( "rel-id-2", (build "rel-type-2") ) ])
+                    |> withRelationship "test-rel" (relationships [ ( "rel-id-1", build "rel-type-1" ), ( "rel-id-2", build "rel-type-2" ) ])
                     |> Expect.all
                         [ id >> Expect.equal ""
                         , getInternal .type_ >> Expect.equal "test"
@@ -118,8 +118,8 @@ suite =
                 build "test"
                     |> withRelationship "test-rel"
                         (relationships
-                            [ ( "rel-id-1", (build "rel-type-1" |> withRelationship "test-rel-inner" (relationship "rel-inner-1" (build "rel-inner-type"))) )
-                            , ( "rel-id-2", (build "rel-type-2") )
+                            [ ( "rel-id-1", build "rel-type-1" |> withRelationship "test-rel-inner" (relationship "rel-inner-1" (build "rel-inner-type")) )
+                            , ( "rel-id-2", build "rel-type-2" )
                             ]
                         )
                     |> Expect.all

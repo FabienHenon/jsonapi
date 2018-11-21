@@ -1,10 +1,11 @@
 module DecodeResources exposing (main)
 
-import Html exposing (Html, div, ul, li, text, h1, p, sup)
-import Json.Decode as JD exposing (map4, succeed, field, string, map6, Decoder)
+import Browser
+import Dict exposing (Dict)
+import Html exposing (Html, div, h1, li, p, sup, text, ul)
+import Json.Decode as JD exposing (Decoder, field, map4, map6, string, succeed)
 import JsonApi exposing (ResourceInfo)
 import JsonApi.Decode as Decode
-import Dict exposing (Dict)
 
 
 type alias Post =
@@ -71,13 +72,12 @@ type alias Model =
     }
 
 
-main : Program Never Model Msg
+main : Program () Model Msg
 main =
-    Html.program
+    Browser.sandbox
         { init = init
         , view = view
         , update = update
-        , subscriptions = subscriptions
         }
 
 
@@ -85,21 +85,21 @@ initModel : Model
 initModel =
     { posts =
         Decode.resources "posts" postDecoder
-            |> flip JD.decodeString payload
+            |> (\a -> JD.decodeString a payload)
             |> Result.toMaybe
     }
 
 
-init : ( Model, Cmd Msg )
+init : Model
 init =
-    ( initModel, Cmd.none )
+    initModel
 
 
-update : Msg -> Model -> ( Model, Cmd Msg )
+update : Msg -> Model -> Model
 update msg model =
     case msg of
         NoOp ->
-            ( model, Cmd.none )
+            model
 
 
 view : Model -> Html Msg
@@ -136,11 +136,6 @@ viewComment comment =
         [ sup [] [ text ("Email: " ++ comment.email) ]
         , p [] [ text comment.content ]
         ]
-
-
-subscriptions : Model -> Sub Msg
-subscriptions _ =
-    Sub.none
 
 
 payload : String

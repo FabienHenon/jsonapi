@@ -1,4 +1,10 @@
-module JsonApi exposing (ResourceInfo, OneOrManyRelationships, id, links, withId, withLinks, withAttributes, withRelationship, build, relationship, relationships, fromResourceInfo)
+module JsonApi exposing
+    ( ResourceInfo, OneOrManyRelationships
+    , build, fromResourceInfo
+    , id, links
+    , withId, withLinks, withAttributes, withRelationship
+    , relationship, relationships
+    )
 
 {-| JsonApi exposes the `ResourceInfo` type and functions to get and set information
 for your resources.
@@ -30,15 +36,15 @@ for your resources.
 
 -}
 
-import JsonApi.Internal.ResourceInfo as Internal
 import Dict exposing (Dict)
 import Json.Encode exposing (Value, object)
+import JsonApi.Internal.ResourceInfo as Internal
 
 
 {-| The `ResourceInfo` represents a resource. It is passed to your resource decoders, but you can also use it to encode resources to json api.
 It contains useful information for decoding and encoding your resource: resource `id`, `links`, `attributes`, `relationships`, ...
 
-_Example of json api <resource:_>
+\_Example of json api <resource:_>
 
 ```json
 {
@@ -97,22 +103,22 @@ From the json example above, `id` will return `13608770-76dd-47e5-a1c4-4d0d9c248
 
 -}
 id : ResourceInfo -> String
-id (Internal.ResourceInfo { id }) =
-    id |> Maybe.withDefault ""
+id (Internal.ResourceInfo res) =
+    res.id |> Maybe.withDefault ""
 
 
 {-| Returns the `links` of your resource.
 
 From the json example above, `links` will return a `Dict` with this value:
 
-    [ ("self", "http://link-to-user")
-    , ("profile", "http://link-to-user-profile")
+    [ ( "self", "http://link-to-user" )
+    , ( "profile", "http://link-to-user-profile" )
     ]
 
 -}
 links : ResourceInfo -> Dict String String
-links (Internal.ResourceInfo { links }) =
-    links
+links (Internal.ResourceInfo res) =
+    res.links
 
 
 {-| Builds a new `ResourceInfo` with the specified type name
@@ -154,8 +160,8 @@ fromResourceInfo type_ (Internal.ResourceInfo info) =
 
 -}
 withId : String -> ResourceInfo -> ResourceInfo
-withId id (Internal.ResourceInfo info) =
-    Internal.ResourceInfo { info | id = Just id }
+withId id_ (Internal.ResourceInfo info) =
+    Internal.ResourceInfo { info | id = Just id_ }
 
 
 {-| Sets the links of the `ResourceInfo` object
@@ -167,8 +173,8 @@ withId id (Internal.ResourceInfo info) =
 
 -}
 withLinks : Dict String String -> ResourceInfo -> ResourceInfo
-withLinks links (Internal.ResourceInfo info) =
-    Internal.ResourceInfo { info | links = links }
+withLinks links_ (Internal.ResourceInfo info) =
+    Internal.ResourceInfo { info | links = links_ }
 
 
 {-| Sets the attributes of the `ResourceInfo` object.
@@ -218,8 +224,8 @@ It takes the `id` of the resource and the resource.
 
 -}
 relationship : String -> ResourceInfo -> OneOrManyRelationships
-relationship id =
-    withId id >> Internal.OneRelationship >> Internal.OneOrManyRelationships
+relationship id_ =
+    withId id_ >> Internal.OneRelationship >> Internal.OneOrManyRelationships
 
 
 {-| Defines a list of relationships that can then be added to a parent `ResourceInfo`.
@@ -238,4 +244,4 @@ It takes a `List` of `Tuple`s with the `id` of the resource and the resource.
 -}
 relationships : List ( String, ResourceInfo ) -> OneOrManyRelationships
 relationships =
-    List.map (\( id, info ) -> info |> withId id) >> Internal.ManyRelationships >> Internal.OneOrManyRelationships
+    List.map (\( id_, info ) -> info |> withId id_) >> Internal.ManyRelationships >> Internal.OneOrManyRelationships

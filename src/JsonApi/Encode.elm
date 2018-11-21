@@ -1,4 +1,4 @@
-module JsonApi.Encode exposing (resources, resource)
+module JsonApi.Encode exposing (resource, resources)
 
 {-| Provides functions to encode resources to a `Json.Encode.Value`. You can then finally
 encode it to a json api string with `Json.Encode.encode`.
@@ -10,10 +10,10 @@ encode it to a json api string with `Json.Encode.encode`.
 
 -}
 
-import JsonApi exposing (ResourceInfo, OneOrManyRelationships)
-import Json.Encode exposing (Value, object, list, string, null)
-import JsonApi.Internal.ResourceInfo as Internal
 import Dict exposing (Dict)
+import Json.Encode exposing (Value, list, null, object, string)
+import JsonApi exposing (OneOrManyRelationships, ResourceInfo)
+import JsonApi.Internal.ResourceInfo as Internal
 
 
 {-| Encodes a list of resources.
@@ -150,8 +150,8 @@ import Dict exposing (Dict)
 
 -}
 resources : List ResourceInfo -> Value
-resources resources =
-    encodeBasePayload (getAllIncluded resources) (encodeResources resources)
+resources resources_ =
+    encodeBasePayload (getAllIncluded resources_) (encodeResources resources_)
 
 
 {-| Encodes a resource.
@@ -253,8 +253,8 @@ resources resources =
 
 -}
 resource : ResourceInfo -> Value
-resource (Internal.ResourceInfo resource) =
-    encodeBasePayload resource.included (encodeResource (Internal.ResourceInfo resource))
+resource (Internal.ResourceInfo resource_) =
+    encodeBasePayload resource_.included (encodeResource (Internal.ResourceInfo resource_))
 
 
 
@@ -265,20 +265,20 @@ encodeBasePayload : List ResourceInfo -> Value -> Value
 encodeBasePayload included data =
     object
         [ ( "data", data )
-        , ( "included", list (List.map encodeResource included) )
+        , ( "included", list encodeResource included )
         ]
 
 
 encodeResources : List ResourceInfo -> Value
-encodeResources resources =
-    list (List.map encodeResource resources)
+encodeResources resources_ =
+    list encodeResource resources_
 
 
 encodeResource : ResourceInfo -> Value
 encodeResource (Internal.ResourceInfo { id, type_, attributes, relationships, links }) =
     object
-        ((encodeOptionalId id)
-            ++ (encodeOptionalLinks links)
+        (encodeOptionalId id
+            ++ encodeOptionalLinks links
             ++ [ ( "type", string type_ )
                , ( "attributes", attributes )
                , ( "relationships", encodeRelationships relationships )
@@ -315,7 +315,7 @@ encodeRelationship ( type_, relationship ) =
 encodeRelationshipData : Internal.Relationship -> Value
 encodeRelationshipData relationship =
     object
-        ((encodeOptionalLinks relationship.links)
+        (encodeOptionalLinks relationship.links
             ++ [ ( "data", encodeRelationshipOneOrMoreData relationship.data )
                ]
         )
@@ -328,7 +328,7 @@ encodeRelationshipOneOrMoreData data =
             encodeOneRelationshipData d
 
         Internal.Many d ->
-            list (List.map encodeOneRelationshipData d)
+            list encodeOneRelationshipData d
 
         Internal.NoRelationship ->
             null
@@ -343,8 +343,8 @@ encodeOneRelationshipData v =
 
 
 getAllIncluded : List ResourceInfo -> List ResourceInfo
-getAllIncluded resources =
-    resources
+getAllIncluded resources_ =
+    resources_
         |> List.map (\(Internal.ResourceInfo { included }) -> included)
         |> List.concat
         |> Internal.mergeIncluded []

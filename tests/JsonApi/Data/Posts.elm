@@ -1,9 +1,9 @@
-module JsonApi.Data.Posts exposing (..)
+module JsonApi.Data.Posts exposing (Comment, Creator, Post, badCreatorDecoder, badPostDecoder, comment1, comment2, comment3, commentDecoder, creator, creatorDecoder, fakeUser, post2, postBadCreatorDecoder, postDecoder, postDecoderWithoutCreator, postNoLink, postWithoutAttributesDecoder, postWithoutRelationshipsDecoder, posts)
 
 import Dict exposing (Dict)
-import Json.Decode exposing (Decoder, field, string, succeed, decodeString, map4, map6, oneOf)
-import JsonApi.Decode as Decode
+import Json.Decode exposing (Decoder, decodeString, field, map4, map6, oneOf, string, succeed)
 import JsonApi exposing (ResourceInfo)
+import JsonApi.Decode as Decode
 
 
 type alias Post =

@@ -1,4 +1,4 @@
-module JsonApi.Internal.ResourceInfo exposing (..)
+module JsonApi.Internal.ResourceInfo exposing (OneOrManyRelationships(..), OneOrManyRelationshipsInternal(..), OneOrMoreRelationshipData(..), Relationship, RelationshipData, ResourceInfo(..), ResourceInfoInternal, addOrUpdateResource, addRelationship, build, includedFromResources, isGoodRelationship, mergeIncluded, relationshipToData, resourceInfoToData, updateIncluded)
 
 import Dict exposing (Dict)
 import Json.Decode exposing (Value)
@@ -71,7 +71,7 @@ relationshipToData oneOrMoreRelationships =
             resourceInfo |> resourceInfoToData |> One
 
         ManyRelationships resourceInfoList ->
-            (List.map resourceInfoToData resourceInfoList) |> Many
+            List.map resourceInfoToData resourceInfoList |> Many
 
 
 resourceInfoToData : ResourceInfo -> RelationshipData
@@ -89,15 +89,15 @@ includedFromResources oneOrManyRelationships =
     let
         getResourceAndIncluded : ResourceInfo -> List ResourceInfo
         getResourceAndIncluded (ResourceInfo resourceInfo) =
-            (ResourceInfo resourceInfo) :: resourceInfo.included
+            ResourceInfo resourceInfo :: resourceInfo.included
     in
-        case oneOrManyRelationships of
-            OneRelationship resourceInfo ->
-                getResourceAndIncluded resourceInfo
+    case oneOrManyRelationships of
+        OneRelationship resourceInfo ->
+            getResourceAndIncluded resourceInfo
 
-            ManyRelationships resourceInfoList ->
-                List.map getResourceAndIncluded resourceInfoList
-                    |> List.concat
+        ManyRelationships resourceInfoList ->
+            List.map getResourceAndIncluded resourceInfoList
+                |> List.concat
 
 
 mergeIncluded : List ResourceInfo -> List ResourceInfo -> List ResourceInfo

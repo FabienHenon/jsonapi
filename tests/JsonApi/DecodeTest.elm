@@ -1,13 +1,13 @@
-module JsonApi.DecodeTest exposing (..)
+module JsonApi.DecodeTest exposing (suite)
 
-import Expect exposing (Expectation)
-import Test exposing (..)
-import JsonApi.Decode as Decode
-import JsonApi.Data.ResourcesPayloads as Resources
-import JsonApi.Data.ResourcePayloads as Resource
-import Json.Decode exposing (Decoder, field, string, succeed, decodeString, map4, map6)
 import Dict exposing (Dict)
+import Expect exposing (Expectation)
+import Json.Decode exposing (Decoder, decodeString, field, map4, map6, string, succeed, errorToString)
 import JsonApi.Data.Posts exposing (..)
+import JsonApi.Data.ResourcePayloads as Resource
+import JsonApi.Data.ResourcesPayloads as Resources
+import JsonApi.Decode as Decode
+import Test exposing (..)
 
 
 suite : Test
@@ -34,7 +34,7 @@ suite =
                                 resources
 
                         Err error ->
-                            Expect.fail error
+                            Expect.fail (errorToString error)
             , test "decode success with missing links" <|
                 \() ->
                     case decodeString (Decode.resources "posts" postDecoder) Resources.validPayloadWithoutLinks of
@@ -54,7 +54,7 @@ suite =
                                 resources
 
                         Err error ->
-                            Expect.fail error
+                            Expect.fail (errorToString error)
             , test "decode success with null relationship" <|
                 \() ->
                     case decodeString (Decode.resources "posts" postDecoderWithoutCreator) Resources.validPayloadWithNullRelationship of
@@ -74,7 +74,7 @@ suite =
                                 resources
 
                         Err error ->
-                            Expect.fail error
+                            Expect.fail (errorToString error)
             , test "decode faild with missing data field" <|
                 \() ->
                     decodeString (Decode.resources "posts" postDecoder) Resources.invalidPayloadWithoutData
@@ -134,7 +134,7 @@ suite =
                                 resources
 
                         Err error ->
-                            Expect.fail error
+                            Expect.fail (errorToString error)
             , test "decode failed with missing attributes field for Creator" <|
                 \() ->
                     decodeString (Decode.resources "posts" postDecoder) Resources.invalidPayloadWithoutCreatorAttributes
@@ -166,7 +166,7 @@ suite =
                                 resources
 
                         Err error ->
-                            Expect.fail error
+                            Expect.fail (errorToString error)
             , test "decode failed with list of creators instead of one element" <|
                 \() ->
                     decodeString (Decode.resources "posts" postDecoder) Resources.invalidPayloadCreatorIsList
@@ -197,7 +197,7 @@ suite =
                                 resource
 
                         Err error ->
-                            Expect.fail error
+                            Expect.fail (errorToString error)
             , test "decode success with missing links" <|
                 \() ->
                     case decodeString (Decode.resource "posts" postDecoder) Resource.validPayloadWithoutLinks of
@@ -214,7 +214,7 @@ suite =
                                 resource
 
                         Err error ->
-                            Expect.fail error
+                            Expect.fail (errorToString error)
             , test "decode faild with missing data field" <|
                 \() ->
                     decodeString (Decode.resource "posts" postDecoder) Resource.invalidPayloadWithoutData
@@ -271,7 +271,7 @@ suite =
                                 resource
 
                         Err error ->
-                            Expect.fail error
+                            Expect.fail (errorToString error)
             , test "decode failed with missing attributes field for Creator" <|
                 \() ->
                     decodeString (Decode.resource "posts" postDecoder) Resource.invalidPayloadWithoutCreatorAttributes
@@ -300,7 +300,7 @@ suite =
                                 resource
 
                         Err error ->
-                            Expect.fail error
+                            Expect.fail (errorToString error)
             , test "decode failed with list of creators instead of one element" <|
                 \() ->
                     decodeString (Decode.resource "posts" postDecoder) Resource.invalidPayloadCreatorIsList
@@ -323,6 +323,6 @@ suite =
                                 resource
 
                         Err error ->
-                            Expect.fail error
+                            Expect.fail (errorToString error)
             ]
         ]

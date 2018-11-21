@@ -1,11 +1,12 @@
 module DecodeResources exposing (main)
 
-import Html exposing (Html, div, ul, li, text, h1, p, sup, textarea)
+import Browser
+import Dict exposing (Dict)
+import Html exposing (Html, div, h1, li, p, sup, text, textarea, ul)
 import Html.Attributes exposing (style)
-import Json.Encode exposing (encode, string, object)
+import Json.Encode exposing (encode, object, string)
 import JsonApi exposing (ResourceInfo)
 import JsonApi.Encode as Encode
-import Dict exposing (Dict)
 
 
 type alias Post =
@@ -111,13 +112,13 @@ postToResource post =
 
 
 creatorToResource : Creator -> ResourceInfo
-creatorToResource creator =
+creatorToResource creator_ =
     JsonApi.build "creators"
-        |> JsonApi.withId creator.id
-        |> JsonApi.withLinks creator.links
+        |> JsonApi.withId creator_.id
+        |> JsonApi.withLinks creator_.links
         |> JsonApi.withAttributes
-            [ ( "firstname", string creator.firstname )
-            , ( "lastname", string creator.lastname )
+            [ ( "firstname", string creator_.firstname )
+            , ( "lastname", string creator_.lastname )
             ]
 
 
@@ -146,13 +147,12 @@ type alias Model =
     }
 
 
-main : Program Never Model Msg
+main : Program () Model Msg
 main =
-    Html.program
+    Browser.sandbox
         { init = init
         , view = view
         , update = update
-        , subscriptions = subscriptions
         }
 
 
@@ -164,16 +164,16 @@ initModel =
     }
 
 
-init : ( Model, Cmd Msg )
+init : Model
 init =
-    ( initModel, Cmd.none )
+    initModel
 
 
-update : Msg -> Model -> ( Model, Cmd Msg )
+update : Msg -> Model -> Model
 update msg model =
     case msg of
         NoOp ->
-            ( model, Cmd.none )
+            model
 
 
 view : Model -> Html Msg
@@ -181,39 +181,13 @@ view model =
     div
         []
         [ textarea
-            [ style
-                [ ( "position", "fixed" )
-                , ( "width", "100%" )
-                , ( "height", "100%" )
-                , ( "font-size", "18px" )
-                , ( "font-familly", "Courrier New" )
-                ]
+            [ style "position" "fixed"
+            , style "width" "100%"
+            , style "height" "100%"
+            , style "font-size" "18px"
+            , style "font-familly" "Courrier New"
             ]
             [ text model.posts ]
         ]
 
 
-viewPost : Post -> Html Msg
-viewPost post =
-    li []
-        [ h1 [] [ text post.title ]
-        , div []
-            [ sup [] [ text ("Author: " ++ post.creator.firstname ++ " " ++ post.creator.lastname) ]
-            , p [] [ text post.content ]
-            , ul []
-                (List.map viewComment post.comments)
-            ]
-        ]
-
-
-viewComment : Comment -> Html Msg
-viewComment comment =
-    li []
-        [ sup [] [ text ("Email: " ++ comment.email) ]
-        , p [] [ text comment.content ]
-        ]
-
-
-subscriptions : Model -> Sub Msg
-subscriptions _ =
-    Sub.none

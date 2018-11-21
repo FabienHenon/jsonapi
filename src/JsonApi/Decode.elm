@@ -2,7 +2,7 @@ module JsonApi.Decode exposing (resources, resource, relationship, relationships
 
 {-| Provides functions to decode json api resources and their relationships
 
-*Example json:*
+_Example json:_
 
 ```json
 {
@@ -134,12 +134,12 @@ module JsonApi.Decode exposing (resources, resource, relationship, relationships
 
 -}
 
-import JsonApi.Internal.ResourceInfo as Internal
-import JsonApi exposing (ResourceInfo)
-import Json.Decode exposing (Value, Decoder, list, field, map, andThen, succeed, fail, string, dict, oneOf, value, decodeValue)
-import Json.Decode.Extra exposing ((|:))
-import List.Extra
 import Dict exposing (Dict)
+import Json.Decode exposing (Decoder, Value, andThen, decodeValue, dict, fail, field, list, map, oneOf, string, succeed, value, errorToString)
+import Json.Decode.Extra exposing (andMap)
+import JsonApi exposing (ResourceInfo)
+import JsonApi.Internal.ResourceInfo as Internal
+import List.Extra
 
 
 {-| Decode a relationship from your json api resources.
@@ -236,7 +236,7 @@ relationships : String -> ResourceInfo -> (ResourceInfo -> Decoder a) -> Decoder
 relationships type_ (Internal.ResourceInfo info) decoder =
     info.relationships
         |> Dict.get type_
-        |> Maybe.map (.data)
+        |> Maybe.map .data
         |> Maybe.andThen (findRelationships info.included)
         |> Maybe.map (decodeRelationships decoder)
         |> Maybe.withDefault (fail "Relationships not found")
@@ -329,6 +329,7 @@ filterDataType : String -> (ResourceInfo -> Decoder a) -> Internal.ResourceInfoI
 filterDataType dataType decoder info =
     if dataType == info.type_ then
         field "attributes" (decoder (Internal.ResourceInfo info)) |> map Just
+
     else
         succeed Nothing
 
@@ -336,11 +337,11 @@ filterDataType dataType decoder info =
 resourceInfoInternalDecoder : List ResourceInfo -> Decoder Internal.ResourceInfoInternal
 resourceInfoInternalDecoder included =
     succeed (Internal.ResourceInfoInternal included)
-        |: (field "id" string |> map Just)
-        |: (oneOf [ field "links" linksDecoder, succeed Dict.empty ])
-        |: (field "type" string)
-        |: (oneOf [ field "relationships" resourceRelationshipsDecoder, succeed Dict.empty ])
-        |: (field "attributes" value)
+        |> andMap (field "id" string |> map Just)
+        |> andMap (oneOf [ field "links" linksDecoder, succeed Dict.empty ])
+        |> andMap (field "type" string)
+        |> andMap (oneOf [ field "relationships" resourceRelationshipsDecoder, succeed Dict.empty ])
+        |> andMap (field "attributes" value)
 
 
 linksDecoder : Decoder (Dict String String)
@@ -356,8 +357,8 @@ resourceRelationshipsDecoder =
 resourceRelationshipDecoder : Decoder Internal.Relationship
 resourceRelationshipDecoder =
     succeed Internal.Relationship
-        |: (field "data" resourceOneOrMoreRelationshipDataDecoder)
-        |: (oneOf [ field "links" linksDecoder, succeed Dict.empty ])
+        |> andMap (field "data" resourceOneOrMoreRelationshipDataDecoder)
+        |> andMap (oneOf [ field "links" linksDecoder, succeed Dict.empty ])
 
 
 resourceOneOrMoreRelationshipDataDecoder : Decoder Internal.OneOrMoreRelationshipData
@@ -372,8 +373,8 @@ resourceOneOrMoreRelationshipDataDecoder =
 resourceRelationshipDataDecoder : Decoder Internal.RelationshipData
 resourceRelationshipDataDecoder =
     succeed Internal.RelationshipData
-        |: (field "id" string)
-        |: (field "type" string)
+        |> andMap (field "id" string)
+        |> andMap (field "type" string)
 
 
 findRelationship : List ResourceInfo -> Internal.OneOrMoreRelationshipData -> Maybe ResourceInfo
@@ -405,7 +406,7 @@ findRelationships included oneOrMoreRelationshipData =
 
                             Just list ->
                                 List.Extra.find (isGoodRelationship relationshipData) included
-                                    |> Maybe.map (flip (::) list)
+                                    |> Maybe.map (\a -> (::) a list)
                     )
                     (Just [])
                 |> Maybe.map List.reverse
@@ -416,7 +417,7 @@ findRelationships included oneOrMoreRelationshipData =
 
 isGoodRelationship : Internal.RelationshipData -> ResourceInfo -> Bool
 isGoodRelationship relationshipData (Internal.ResourceInfo { id, type_ }) =
-    id == (Just relationshipData.id) && type_ == relationshipData.type_
+    id == Just relationshipData.id && type_ == relationshipData.type_
 
 
 includedDecoder : Decoder (List ResourceInfo)
@@ -432,7 +433,7 @@ decodeRelationship decoder (Internal.ResourceInfo info) =
             succeed res
 
         Err err ->
-            fail err
+            fail (errorToString err)
 
 
 decodeRelationships : (ResourceInfo -> Decoder a) -> List ResourceInfo -> Decoder (List a)
@@ -446,7 +447,7 @@ decodeRelationships decoder =
                 Just list ->
                     decodeValue (decoder (Internal.ResourceInfo info)) info.attributes
                         |> Result.toMaybe
-                        |> Maybe.map (flip (::) list)
+                        |> Maybe.map (\a -> (::) a list)
         )
         (Just [])
         >> Maybe.map List.reverse
