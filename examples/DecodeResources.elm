@@ -3,9 +3,10 @@ module DecodeResources exposing (main)
 import Browser
 import Dict exposing (Dict)
 import Html exposing (Html, div, h1, li, p, sup, text, ul)
-import Json.Decode as JD exposing (Decoder, field, map4, map6, string, succeed)
-import JsonApi exposing (ResourceInfo)
+import Json.Decode as JD exposing (Decoder, bool, field, map, map4, map6, string, succeed)
 import JsonApi.Decode as Decode
+import JsonApi.Document exposing (Document)
+import JsonApi.Resource exposing (Resource)
 
 
 type alias Post =
@@ -34,33 +35,44 @@ type alias Comment =
     }
 
 
-commentDecoder : ResourceInfo -> Decoder Comment
+type alias Meta =
+    { redirect : Bool
+    }
+
+
+commentDecoder : Resource -> Decoder Comment
 commentDecoder resourceInfo =
     map4 Comment
-        (succeed (JsonApi.id resourceInfo))
-        (succeed (JsonApi.links resourceInfo))
+        (succeed (JsonApi.Resource.id resourceInfo))
+        (succeed (JsonApi.Resource.links resourceInfo))
         (field "content" string)
         (field "email" string)
 
 
-creatorDecoder : ResourceInfo -> Decoder Creator
+creatorDecoder : Resource -> Decoder Creator
 creatorDecoder resourceInfo =
     map4 Creator
-        (succeed (JsonApi.id resourceInfo))
-        (succeed (JsonApi.links resourceInfo))
+        (succeed (JsonApi.Resource.id resourceInfo))
+        (succeed (JsonApi.Resource.links resourceInfo))
         (field "firstname" string)
         (field "lastname" string)
 
 
-postDecoder : ResourceInfo -> Decoder Post
+postDecoder : Resource -> Decoder Post
 postDecoder resourceInfo =
     map6 Post
-        (succeed (JsonApi.id resourceInfo))
-        (succeed (JsonApi.links resourceInfo))
+        (succeed (JsonApi.Resource.id resourceInfo))
+        (succeed (JsonApi.Resource.links resourceInfo))
         (field "title" string)
         (field "content" string)
         (Decode.relationship "creator" resourceInfo creatorDecoder)
         (Decode.relationships "comments" resourceInfo commentDecoder)
+
+
+metaDecoder : Decoder Meta
+metaDecoder =
+    map Meta
+        (field "redirect" bool)
 
 
 type Msg
@@ -68,7 +80,7 @@ type Msg
 
 
 type alias Model =
-    { posts : Maybe (List Post)
+    { document : Maybe (Document Meta (List Post))
     }
 
 
@@ -83,8 +95,8 @@ main =
 
 initModel : Model
 initModel =
-    { posts =
-        Decode.resources "posts" postDecoder
+    { document =
+        Decode.resourcesWithMeta "posts" postDecoder metaDecoder
             |> (\a -> JD.decodeString a payload)
             |> Result.toMaybe
     }
@@ -106,13 +118,23 @@ view : Model -> Html Msg
 view model =
     div
         []
-        (case model.posts of
+        (case model.document of
             Nothing ->
                 [ text "No post available" ]
 
-            Just posts ->
-                [ ul []
-                    (List.map viewPost posts)
+            Just document ->
+                [ div []
+                    [ if (JsonApi.Document.meta document).redirect then
+                        text "Redirect"
+
+                      else
+                        text "No redirect"
+                    ]
+                , ul []
+                    (document
+                        |> JsonApi.Document.resource
+                        |> List.map viewPost
+                    )
                 ]
         )
 
@@ -142,6 +164,9 @@ payload : String
 payload =
     """
     {
+        "meta": {
+            "redirect": true
+        },
         "data": [
             {
                 "type": "posts",

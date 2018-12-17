@@ -1,7 +1,7 @@
 # jsonapi [![Build Status](https://travis-ci.org/FabienHenon/jsonapi.svg?branch=master)](https://travis-ci.org/FabienHenon/jsonapi)
 
 ```
-elm package install FabienHenon/jsonapi
+elm install FabienHenon/jsonapi
 ```
 
 `JsonApi` allows you to decode and encode json content conforming to the [Json Api spec](http://jsonapi.org/).
@@ -45,33 +45,33 @@ With these records we will retrieve resources of type `Post`. These posts contai
 Then you have to define your resource decoder as well as the decoders for the relationships you need:
 
 ```elm
-import JsonApi exposing (ResourceInfo)
+import JsonApi.Resource exposing (Resource)
 import JsonApi.Decode as Decode
 import Json.Decode as JD exposing (map4, succeed, field, string, map6, Decoder)
 
-commentDecoder : ResourceInfo -> Decoder Comment
+commentDecoder : Resource -> Decoder Comment
 commentDecoder resourceInfo =
     map4 Comment
-        (succeed (JsonApi.id resourceInfo))
-        (succeed (JsonApi.links resourceInfo))
+        (succeed (JsonApi.Resource.id resourceInfo))
+        (succeed (JsonApi.Resource.links resourceInfo))
         (field "content" string)
         (field "email" string)
 
 
-creatorDecoder : ResourceInfo -> Decoder Creator
+creatorDecoder : Resource -> Decoder Creator
 creatorDecoder resourceInfo =
     map4 Creator
-        (succeed (JsonApi.id resourceInfo))
-        (succeed (JsonApi.links resourceInfo))
+        (succeed (JsonApi.Resource.id resourceInfo))
+        (succeed (JsonApi.Resource.links resourceInfo))
         (field "firstname" string)
         (field "lastname" string)
 
 
-postDecoder : ResourceInfo -> Decoder Post
+postDecoder : Resource -> Decoder Post
 postDecoder resourceInfo =
     map6 Post
-        (succeed (JsonApi.id resourceInfo))
-        (succeed (JsonApi.links resourceInfo))
+        (succeed (JsonApi.Resource.id resourceInfo))
+        (succeed (JsonApi.Resource.links resourceInfo))
         (field "title" string)
         (field "content" string)
         (Decode.relationship "creator" resourceInfo creatorDecoder)
@@ -79,14 +79,14 @@ postDecoder resourceInfo =
 
 ```
 
-Your decoders will be passed a `ResourceInfo` containing internal information about how to decode the resources and their relationships.
-From this `ResourceInfo` you can also get the resource's `id` and `links`.
+Your decoders will be passed a `Resource` containing internal information about how to decode the resources and their relationships.
+From this `Resource` you can also get the resource's `id` and `links`.
 
 Then you only need to decode your resource as usual using the decoder of your choice.
 
 If you need to decode relationships you have 2 functions: `relationship` and `relationships`. While the former will decode a unique relationship, the later will decode a list of relationships.
 
-These functions are given the type of the relationship to decode from the `relationships` json attribute, the `ResourceInfo` object, and the relationship decoder.
+These functions are given the type of the relationship to decode from the `relationships` json attribute, the `Resource` object, and the relationship decoder.
 
 ### Decoding
 Finally you will want to decode your json payload and retrieve your resources:
@@ -95,12 +95,14 @@ Finally you will want to decode your json payload and retrieve your resources:
 Decode.resources "posts" postDecoder
 ```
 
-By calling the function `resources` you are creating your final decoder. You have to pass it the type of your resources, your resource decoder and it will return a `Decoder` for a `List` of your resource. _You can also call `resource` that will return a `Decoder a` instead of `Decoder (List a)`. Useful when you will have only one resource in your payload_
+By calling the function `resources` you are creating your final decoder. You have to pass it the type of your resources, your resource decoder and it will return a `Decoder` for a `JsonApi.Document` containing a `List` of your resources. _You can also call `resource` that will return a `Decoder` for a `JsonApi.Document` containing only one resource if there is only one in your payload_
+
+You can also use the functions `resourceWithMeta` and `resourcesWithMeta` that will take one more parameter which is a `Decoder` for an object corresponding to the object in the `meta` property of the json payload you want to decode.
 
 You can then finally decode your payload:
 
 ```elm
-decode : Result String (List Post)
+decode : Result String (Document NoMeta (List Post))
 decode =
         Json.Decode.decodeString (Decode.resources "posts" postDecoder) payload
 
@@ -231,6 +233,8 @@ payload =
     """
 ```
 
+_Note the `NoMeta` type in the `Document` type. That means you don't want any `meta` object to be decoded from the json payload. You can see an example of a `meta` object beeing decoded in the `examples/DecodeResources.elm` file_
+
 ## Encoding resources
 
 ### Types
@@ -266,74 +270,88 @@ type alias Comment =
 
 We will encode a list of `Post`s. Each `Post` containing a list of `Comment`s and a `Creator`.
 
-### `ResourceInfo` functions
+### `Resource` functions
 
-Then you will have to create a few functions to transform your data to `ResourceInfo`:
+Then you will have to create a few functions to transform your data to a `Resource`:
 
 ```elm
-postToResource : Post -> ResourceInfo
+postToResource : Post -> Resource
 postToResource post =
-    JsonApi.build "posts"
-        |> JsonApi.withId post.id
-        |> JsonApi.withLinks post.links
-        |> JsonApi.withAttributes
+    JsonApi.Resource.build "posts"
+        |> JsonApi.Resource.withId post.id
+        |> JsonApi.Resource.withLinks post.links
+        |> JsonApi.Resource.withAttributes
             [ ( "title", string post.title )
             , ( "content", string post.content )
             ]
-        |> JsonApi.withRelationship "creator" (JsonApi.relationship post.creator.id (creatorToResource post.creator))
-        |> JsonApi.withRelationship "comments" (JsonApi.relationships (List.map commentRelationship post.comments))
+        |> JsonApi.Resource.withRelationship "creator" (JsonApi.Resource.relationship post.creator.id (creatorToResource post.creator))
+        |> JsonApi.Resource.withRelationship "comments" (JsonApi.Resource.relationships (List.map commentRelationship post.comments))
 
 
-creatorToResource : Creator -> ResourceInfo
+creatorToResource : Creator -> Resource
 creatorToResource creator =
-    JsonApi.build "creators"
-        |> JsonApi.withId creator.id
-        |> JsonApi.withLinks creator.links
-        |> JsonApi.withAttributes
+    JsonApi.Resource.build "creators"
+        |> JsonApi.Resource.withId creator.id
+        |> JsonApi.Resource.withLinks creator.links
+        |> JsonApi.Resource.withAttributes
             [ ( "firstname", string creator.firstname )
             , ( "lastname", string creator.lastname )
             ]
 
 
-commentRelationship : Comment -> ( String, ResourceInfo )
+commentRelationship : Comment -> ( String, Resource )
 commentRelationship comment =
     ( comment.id, commentToResource comment )
 
 
-commentToResource : Comment -> ResourceInfo
+commentToResource : Comment -> Resource
 commentToResource comment =
-    JsonApi.build "comment"
-        |> JsonApi.withId comment.id
-        |> JsonApi.withLinks comment.links
-        |> JsonApi.withAttributes
+    JsonApi.Resource.build "comment"
+        |> JsonApi.Resource.withId comment.id
+        |> JsonApi.Resource.withLinks comment.links
+        |> JsonApi.Resource.withAttributes
             [ ( "content", string comment.content )
             , ( "email", string comment.email )
             ]
 ```
 
-We have a function that transforms a `Post` object to a `ResourceInfo`, a `Creator` to a `ResourceInfo` and a `Comment` to a `ResourceInfo`.
-Because we have many `Comment`s in a `Post` we will need a small function to creator our `commentRelationship`.
+We have a function that transforms a `Post` object to a `Resource`, a `Creator` to a `Resource` and a `Comment` to a `Resource`.
+Because we have many `Comment`s in a `Post` we will need a small function to create our `commentRelationship`.
+
+### `JsonApi.Encode.Document` functions
+
+Now that you have your `Resource`(s), we have to create a new `Document` with these resources:
+
+```elm
+myDocument : List Post -> JsonApi.Encode.Document
+myDocument posts =
+    JsonApi.Encode.Document.build
+        |> JsonApi.Encode.Document.withResources (List.map postToResource posts)
+```
+
+Here we create a new `Document` and we add the resources in it.
+There are also functions to add a `meta` object (`withMeta`) and to set the json api version (`withJsonApiVersion`).
 
 ### Encoding
 
-Finally, once you have your data you can encode it:
+Finally, once you have your document you can encode it:
 
 ```elm
-encode : List Post -> String
-encode posts =
-    Encode.resources (List.map postToResource posts) |> Json.Encode.encode 0
+encode : JsonApi.Encode.Document -> String
+encode document_ =
+    Encode.document document_ |> Json.Encode.encode 0
 ```
 
 ## Examples
 
-To run the examples go to the `examples` directory, install dependencies and run `elm-reactor`:
+To run the examples go to the `examples` directory, install dependencies and run `elm reactor`:
 
 ```
 > cd examples/
-> elm package install
-> elm-reactor
+> elm install
+> elm reactor
 ```
 
 ## Tests
 
-You can install elm packages in tests folder and run tests with `elm-test`
+You can run tests with `elm-test`

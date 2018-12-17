@@ -1,160 +1,26 @@
-module JsonApi.Encode exposing (resource, resources)
+module JsonApi.Encode exposing (document)
 
-{-| Provides functions to encode resources to a `Json.Encode.Value`. You can then finally
+{-| Provides a function to encode documents to a `Json.Encode.Value`. You can then finally
 encode it to a json api string with `Json.Encode.encode`.
 
 
 # Encoders
 
-@docs resource, resources
+@docs document
 
 -}
 
 import Dict exposing (Dict)
 import Json.Encode exposing (Value, list, null, object, string)
-import JsonApi exposing (OneOrManyRelationships, ResourceInfo)
+import JsonApi.Encode.Document exposing (Document)
+import JsonApi.Internal.Document as DocInternal
 import JsonApi.Internal.ResourceInfo as Internal
+import JsonApi.Resource exposing (OneOrManyRelationships, Resource)
 
 
-{-| Encodes a list of resources.
+{-| Encodes a document.
 
-    type alias Post =
-        { id : String
-        , links : Dict String String
-        , title : String
-        , content : String
-        , creator : Creator
-        , comments : List Comment
-        }
-
-
-    type alias Creator =
-        { id : String
-        , links : Dict String String
-        , firstname : String
-        , lastname : String
-        }
-
-
-    type alias Comment =
-        { id : String
-        , links : Dict String String
-        , content : String
-        , email : String
-        }
-
-
-    posts : List Post
-    posts =
-        [ postNoLink, post2 ]
-
-
-    postNoLink : Post
-    postNoLink =
-        { id = "post-1"
-        , links = Dict.empty
-        , title = "Post no link"
-        , content = "Post content no link"
-        , creator = creator
-        , comments = [ comment1, comment2 ]
-        }
-
-
-    post2 : Post
-    post2 =
-        { id = "post-2"
-        , links = Dict.fromList [ ( "self", "http://url-to-post/2" ) ]
-        , title = "Post 2"
-        , content = "Post content 2"
-        , creator = creator
-        , comments = [ comment3 ]
-        }
-
-
-    creator : Creator
-    creator =
-        { id = "creator-1"
-        , links = Dict.fromList [ ( "self", "http://url-to-creator/1" ) ]
-        , firstname = "John"
-        , lastname = "Doe"
-        }
-
-
-    comment1 : Comment
-    comment1 =
-        { id = "comment-1"
-        , links = Dict.fromList [ ( "self", "http://url-to-comment/1" ) ]
-        , content = "Comment 1"
-        , email = "email@email.com"
-        }
-
-
-    comment2 : Comment
-    comment2 =
-        { id = "comment-2"
-        , links = Dict.fromList [ ( "self", "http://url-to-comment/2" ) ]
-        , content = "Comment 2"
-        , email = "email@email.com"
-        }
-
-
-    comment3 : Comment
-    comment3 =
-        { id = "comment-3"
-        , links = Dict.fromList [ ( "self", "http://url-to-comment/3" ) ]
-        , content = "Comment 3"
-        , email = "email@email.com"
-        }
-
-
-    postToResource : Post -> ResourceInfo
-    postToResource post =
-        JsonApi.build "posts"
-            |> JsonApi.withId post.id
-            |> JsonApi.withLinks post.links
-            |> JsonApi.withAttributes
-                [ ( "title", string post.title )
-                , ( "content", string post.content )
-                ]
-            |> JsonApi.withRelationship "creator" (JsonApi.relationship post.creator.id (creatorToResource post.creator))
-            |> JsonApi.withRelationship "comments" (JsonApi.relationships (List.map commentRelationship post.comments))
-
-
-    creatorToResource : Creator -> ResourceInfo
-    creatorToResource creator =
-        JsonApi.build "creators"
-            |> JsonApi.withId creator.id
-            |> JsonApi.withLinks creator.links
-            |> JsonApi.withAttributes
-                [ ( "firstname", string creator.firstname )
-                , ( "lastname", string creator.lastname )
-                ]
-
-
-    commentRelationship : Comment -> ( String, ResourceInfo )
-    commentRelationship comment =
-        ( comment.id, commentToResource comment )
-
-
-    commentToResource : Comment -> ResourceInfo
-    commentToResource comment =
-        JsonApi.build "comment"
-            |> JsonApi.withId comment.id
-            |> JsonApi.withLinks comment.links
-            |> JsonApi.withAttributes
-                [ ( "content", string comment.content )
-                , ( "email", string comment.email )
-                ]
-
-    resources posts
-
--}
-resources : List ResourceInfo -> Value
-resources resources_ =
-    encodeBasePayload (getAllIncluded resources_) (encodeResources resources_)
-
-
-{-| Encodes a resource.
+Here is an example with many resources and a `meta` object:
 
     type alias Post =
         { id : String
@@ -165,14 +31,12 @@ resources resources_ =
         , comments : List Comment
         }
 
-
     type alias Creator =
         { id : String
         , links : Dict String String
         , firstname : String
         , lastname : String
         }
-
 
     type alias Comment =
         { id : String
@@ -191,7 +55,6 @@ resources resources_ =
         , comments = [ comment1 ]
         }
 
-
     creator : Creator
     creator =
         { id = "creator-1"
@@ -199,7 +62,6 @@ resources resources_ =
         , firstname = "John"
         , lastname = "Doe"
         }
-
 
     comment1 : Comment
     comment1 =
@@ -209,72 +71,118 @@ resources resources_ =
         , email = "email@email.com"
         }
 
-
-    postToResource : Post -> ResourceInfo
+    postToResource : Post -> Resource
     postToResource post =
-        JsonApi.build "posts"
-            |> JsonApi.withId post.id
-            |> JsonApi.withLinks post.links
-            |> JsonApi.withAttributes
+        JsonApi.Resource.build "posts"
+            |> JsonApi.Resource.withId post.id
+            |> JsonApi.Resource.withLinks post.links
+            |> JsonApi.Resource.withAttributes
                 [ ( "title", string post.title )
                 , ( "content", string post.content )
                 ]
-            |> JsonApi.withRelationship "creator" (JsonApi.relationship post.creator.id (creatorToResource post.creator))
-            |> JsonApi.withRelationship "comments" (JsonApi.relationships (List.map commentRelationship post.comments))
+            |> JsonApi.Resource.withRelationship "creator" (JsonApi.Resource.relationship post.creator.id (creatorToResource post.creator))
+            |> JsonApi.Resource.withRelationship "comments" (JsonApi.Resource.relationships (List.map commentRelationship post.comments))
 
-
-    creatorToResource : Creator -> ResourceInfo
+    creatorToResource : Creator -> Resource
     creatorToResource creator =
-        JsonApi.build "creators"
-            |> JsonApi.withId creator.id
-            |> JsonApi.withLinks creator.links
-            |> JsonApi.withAttributes
+        JsonApi.Resource.build "creators"
+            |> JsonApi.Resource.withId creator.id
+            |> JsonApi.Resource.withLinks creator.links
+            |> JsonApi.Resource.withAttributes
                 [ ( "firstname", string creator.firstname )
                 , ( "lastname", string creator.lastname )
                 ]
 
-
-    commentRelationship : Comment -> ( String, ResourceInfo )
+    commentRelationship : Comment -> ( String, Resource )
     commentRelationship comment =
         ( comment.id, commentToResource comment )
 
-
-    commentToResource : Comment -> ResourceInfo
+    commentToResource : Comment -> Resource
     commentToResource comment =
-        JsonApi.build "comment"
-            |> JsonApi.withId comment.id
-            |> JsonApi.withLinks comment.links
-            |> JsonApi.withAttributes
+        JsonApi.Resource.build "comment"
+            |> JsonApi.Resource.withId comment.id
+            |> JsonApi.Resource.withLinks comment.links
+            |> JsonApi.Resource.withAttributes
                 [ ( "content", string comment.content )
                 , ( "email", string comment.email )
                 ]
 
-    resource post
+    documentToEncode : Document
+    documentToEncode =
+        JsonApi.Encode.Document.build
+            |> JsonApi.Encode.Document.withResource (postToResource post)
+            |> JsonApi.Encode.Document.withMeta (object [ ( "redirect", bool True ) ])
+
+
+    -- Encodes the document
+    JsonApi.Encode.document documentToEncode
 
 -}
-resource : ResourceInfo -> Value
+document : Document -> Value
+document (DocInternal.DocumentEncode doc) =
+    doc.data
+        |> Maybe.map
+            (\data ->
+                case data of
+                    Internal.OneRelationship res ->
+                        resource res
+
+                    Internal.ManyRelationships res ->
+                        resources res
+            )
+        |> encodeBasePayload doc
+
+
+resources : List Resource -> ( List Resource, Value )
+resources resources_ =
+    ( getAllIncluded resources_, encodeResources resources_ )
+
+
+resource : Resource -> ( List Resource, Value )
 resource (Internal.ResourceInfo resource_) =
-    encodeBasePayload resource_.included (encodeResource (Internal.ResourceInfo resource_))
+    ( resource_.included, encodeResource (Internal.ResourceInfo resource_) )
 
 
 
 -- LOGIC
 
 
-encodeBasePayload : List ResourceInfo -> Value -> Value
-encodeBasePayload included data =
+encodeBasePayload : DocInternal.DocumentEncodeInternal -> Maybe ( List Resource, Value ) -> Value
+encodeBasePayload doc res =
     object
-        [ ( "data", data )
-        , ( "included", list encodeResource included )
-        ]
+        (encodeOptionalResource res
+            ++ encodeOptionalMeta doc
+            ++ [ ( "jsonapi", encodeJsonApi doc ) ]
+        )
 
 
-encodeResources : List ResourceInfo -> Value
+encodeJsonApi : DocInternal.DocumentEncodeInternal -> Value
+encodeJsonApi doc =
+    object [ ( "version", string doc.jsonApiVersion ) ]
+
+
+encodeOptionalMeta : DocInternal.DocumentEncodeInternal -> List ( String, Value )
+encodeOptionalMeta =
+    .meta >> Maybe.map (\meta -> [ ( "meta", meta ) ]) >> Maybe.withDefault []
+
+
+encodeOptionalResource : Maybe ( List Resource, Value ) -> List ( String, Value )
+encodeOptionalResource =
+    Maybe.map
+        (\( included, data ) ->
+            [ ( "data", data )
+            , ( "included", list encodeResource included )
+            ]
+        )
+        >> Maybe.withDefault []
+
+
+encodeResources : List Resource -> Value
 encodeResources resources_ =
     list encodeResource resources_
 
 
-encodeResource : ResourceInfo -> Value
+encodeResource : Resource -> Value
 encodeResource (Internal.ResourceInfo { id, type_, attributes, relationships, links }) =
     object
         (encodeOptionalId id
@@ -342,7 +250,7 @@ encodeOneRelationshipData v =
         ]
 
 
-getAllIncluded : List ResourceInfo -> List ResourceInfo
+getAllIncluded : List Resource -> List Resource
 getAllIncluded resources_ =
     resources_
         |> List.map (\(Internal.ResourceInfo { included }) -> included)

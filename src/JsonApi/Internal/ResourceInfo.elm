@@ -1,4 +1,21 @@
-module JsonApi.Internal.ResourceInfo exposing (OneOrManyRelationships(..), OneOrManyRelationshipsInternal(..), OneOrMoreRelationshipData(..), Relationship, RelationshipData, ResourceInfo(..), ResourceInfoInternal, addOrUpdateResource, addRelationship, build, includedFromResources, isGoodRelationship, mergeIncluded, relationshipToData, resourceInfoToData, updateIncluded)
+module JsonApi.Internal.ResourceInfo exposing
+    ( OneOrManyRelationships(..)
+    , OneOrManyRelationshipsInternal(..)
+    , OneOrMoreRelationshipData(..)
+    , Relationship
+    , RelationshipData
+    , ResourceInfo(..)
+    , ResourceInfoInternal
+    , addOrUpdateResource
+    , addRelationship
+    , build
+    , includedFromResources
+    , isGoodRelationship
+    , mergeIncluded
+    , relationshipToData
+    , resourceInfoToData
+    , updateIncluded
+    )
 
 import Dict exposing (Dict)
 import Json.Decode exposing (Value)

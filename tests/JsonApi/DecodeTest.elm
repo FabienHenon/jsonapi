@@ -2,11 +2,14 @@ module JsonApi.DecodeTest exposing (suite)
 
 import Dict exposing (Dict)
 import Expect exposing (Expectation)
-import Json.Decode exposing (Decoder, decodeString, field, map4, map6, string, succeed, errorToString)
+import Json.Decode exposing (Decoder, decodeString, errorToString, field, map4, map6, string, succeed)
+import JsonApi.Data.DocumentPayloads as DocRes
 import JsonApi.Data.Posts exposing (..)
 import JsonApi.Data.ResourcePayloads as Resource
 import JsonApi.Data.ResourcesPayloads as Resources
 import JsonApi.Decode as Decode
+import JsonApi.Document
+import JsonApi.Internal.Document
 import Test exposing (..)
 
 
@@ -17,61 +20,70 @@ suite =
             [ test "decode success" <|
                 \() ->
                     case decodeString (Decode.resources "posts" postDecoder) Resources.validPayload of
-                        Ok resources ->
+                        Ok document ->
                             Expect.all
-                                [ List.map .id >> Expect.equalLists [ "13608770-76dd-47e5-a1c4-4d0d9c2483ad", "13608770-76dd-47e5-a1c4-4d0d9c2483ae" ]
-                                , List.map (.links >> Dict.toList)
+                                [ JsonApi.Document.resource >> List.map .id >> Expect.equalLists [ "13608770-76dd-47e5-a1c4-4d0d9c2483ad", "13608770-76dd-47e5-a1c4-4d0d9c2483ae" ]
+                                , JsonApi.Document.resource
+                                    >> List.map (.links >> Dict.toList)
                                     >> Expect.equalLists
                                         [ [ ( "self", "http://link-to-post/1" ) ]
                                         , [ ( "self", "http://link-to-post/2" ) ]
                                         ]
-                                , List.map .title >> Expect.equalLists [ "First post", "Second post" ]
-                                , List.map .content >> Expect.equalLists [ "First post content", "Second post content" ]
-                                , List.map (.creator >> .firstname) >> Expect.equalLists [ "John", "John" ]
-                                , List.map (.creator >> .lastname) >> Expect.equalLists [ "Doe", "Doe" ]
-                                , List.map (.comments >> List.map .content) >> Expect.equalLists [ [ "Comment 2 content", "Comment 3 content" ], [ "Comment 1 content" ] ]
+                                , JsonApi.Document.resource >> List.map .title >> Expect.equalLists [ "First post", "Second post" ]
+                                , JsonApi.Document.resource >> List.map .content >> Expect.equalLists [ "First post content", "Second post content" ]
+                                , JsonApi.Document.resource >> List.map (.creator >> .firstname) >> Expect.equalLists [ "John", "John" ]
+                                , JsonApi.Document.resource >> List.map (.creator >> .lastname) >> Expect.equalLists [ "Doe", "Doe" ]
+                                , JsonApi.Document.resource >> List.map (.comments >> List.map .content) >> Expect.equalLists [ [ "Comment 2 content", "Comment 3 content" ], [ "Comment 1 content" ] ]
+                                , JsonApi.Document.meta >> Expect.equal JsonApi.Internal.Document.NoMeta
+                                , JsonApi.Document.jsonApiVersion >> Expect.equal "1.0"
                                 ]
-                                resources
+                                document
 
                         Err error ->
                             Expect.fail (errorToString error)
             , test "decode success with missing links" <|
                 \() ->
                     case decodeString (Decode.resources "posts" postDecoder) Resources.validPayloadWithoutLinks of
-                        Ok resources ->
+                        Ok document ->
                             Expect.all
-                                [ List.map .id >> Expect.equalLists [ "13608770-76dd-47e5-a1c4-4d0d9c2483ad" ]
-                                , List.map (.links >> Dict.toList)
+                                [ JsonApi.Document.resource >> List.map .id >> Expect.equalLists [ "13608770-76dd-47e5-a1c4-4d0d9c2483ad" ]
+                                , JsonApi.Document.resource
+                                    >> List.map (.links >> Dict.toList)
                                     >> Expect.equalLists
                                         [ []
                                         ]
-                                , List.map .title >> Expect.equalLists [ "First post" ]
-                                , List.map .content >> Expect.equalLists [ "First post content" ]
-                                , List.map (.creator >> .firstname) >> Expect.equalLists [ "John" ]
-                                , List.map (.creator >> .lastname) >> Expect.equalLists [ "Doe" ]
-                                , List.map (.comments >> List.map .content) >> Expect.equalLists [ [ "Comment 2 content", "Comment 3 content" ] ]
+                                , JsonApi.Document.resource >> List.map .title >> Expect.equalLists [ "First post" ]
+                                , JsonApi.Document.resource >> List.map .content >> Expect.equalLists [ "First post content" ]
+                                , JsonApi.Document.resource >> List.map (.creator >> .firstname) >> Expect.equalLists [ "John" ]
+                                , JsonApi.Document.resource >> List.map (.creator >> .lastname) >> Expect.equalLists [ "Doe" ]
+                                , JsonApi.Document.resource >> List.map (.comments >> List.map .content) >> Expect.equalLists [ [ "Comment 2 content", "Comment 3 content" ] ]
+                                , JsonApi.Document.meta >> Expect.equal JsonApi.Internal.Document.NoMeta
+                                , JsonApi.Document.jsonApiVersion >> Expect.equal "1.0"
                                 ]
-                                resources
+                                document
 
                         Err error ->
                             Expect.fail (errorToString error)
             , test "decode success with null relationship" <|
                 \() ->
                     case decodeString (Decode.resources "posts" postDecoderWithoutCreator) Resources.validPayloadWithNullRelationship of
-                        Ok resources ->
+                        Ok document ->
                             Expect.all
-                                [ List.map .id >> Expect.equalLists [ "13608770-76dd-47e5-a1c4-4d0d9c2483ad" ]
-                                , List.map (.links >> Dict.toList)
+                                [ JsonApi.Document.resource >> List.map .id >> Expect.equalLists [ "13608770-76dd-47e5-a1c4-4d0d9c2483ad" ]
+                                , JsonApi.Document.resource
+                                    >> List.map (.links >> Dict.toList)
                                     >> Expect.equalLists
                                         [ [ ( "self", "http://link-to-post/1" ) ]
                                         ]
-                                , List.map .title >> Expect.equalLists [ "First post" ]
-                                , List.map .content >> Expect.equalLists [ "First post content" ]
-                                , List.map (.creator >> .firstname) >> Expect.equalLists [ "Fake" ]
-                                , List.map (.creator >> .lastname) >> Expect.equalLists [ "Fake" ]
-                                , List.map (.comments >> List.map .content) >> Expect.equalLists [ [ "Comment 2 content", "Comment 3 content" ] ]
+                                , JsonApi.Document.resource >> List.map .title >> Expect.equalLists [ "First post" ]
+                                , JsonApi.Document.resource >> List.map .content >> Expect.equalLists [ "First post content" ]
+                                , JsonApi.Document.resource >> List.map (.creator >> .firstname) >> Expect.equalLists [ "Fake" ]
+                                , JsonApi.Document.resource >> List.map (.creator >> .lastname) >> Expect.equalLists [ "Fake" ]
+                                , JsonApi.Document.resource >> List.map (.comments >> List.map .content) >> Expect.equalLists [ [ "Comment 2 content", "Comment 3 content" ] ]
+                                , JsonApi.Document.meta >> Expect.equal JsonApi.Internal.Document.NoMeta
+                                , JsonApi.Document.jsonApiVersion >> Expect.equal "1.0"
                                 ]
-                                resources
+                                document
 
                         Err error ->
                             Expect.fail (errorToString error)
@@ -118,20 +130,23 @@ suite =
             , test "decode succeed with missing relationships" <|
                 \() ->
                     case decodeString (Decode.resources "posts" postWithoutRelationshipsDecoder) Resources.invalidPayloadWithoutRelationships of
-                        Ok resources ->
+                        Ok document ->
                             Expect.all
-                                [ List.map .id >> Expect.equalLists [ "13608770-76dd-47e5-a1c4-4d0d9c2483ad" ]
-                                , List.map (.links >> Dict.toList)
+                                [ JsonApi.Document.resource >> List.map .id >> Expect.equalLists [ "13608770-76dd-47e5-a1c4-4d0d9c2483ad" ]
+                                , JsonApi.Document.resource
+                                    >> List.map (.links >> Dict.toList)
                                     >> Expect.equalLists
                                         [ [ ( "self", "http://link-to-post/2" ) ]
                                         ]
-                                , List.map .title >> Expect.equalLists [ "First post" ]
-                                , List.map .content >> Expect.equalLists [ "First post content" ]
-                                , List.map (.creator >> .firstname) >> Expect.equalLists [ "John" ]
-                                , List.map (.creator >> .lastname) >> Expect.equalLists [ "Doe" ]
-                                , List.map (.comments >> List.map .content) >> Expect.equalLists [ [] ]
+                                , JsonApi.Document.resource >> List.map .title >> Expect.equalLists [ "First post" ]
+                                , JsonApi.Document.resource >> List.map .content >> Expect.equalLists [ "First post content" ]
+                                , JsonApi.Document.resource >> List.map (.creator >> .firstname) >> Expect.equalLists [ "John" ]
+                                , JsonApi.Document.resource >> List.map (.creator >> .lastname) >> Expect.equalLists [ "Doe" ]
+                                , JsonApi.Document.resource >> List.map (.comments >> List.map .content) >> Expect.equalLists [ [] ]
+                                , JsonApi.Document.meta >> Expect.equal JsonApi.Internal.Document.NoMeta
+                                , JsonApi.Document.jsonApiVersion >> Expect.equal "1.0"
                                 ]
-                                resources
+                                document
 
                         Err error ->
                             Expect.fail (errorToString error)
@@ -150,20 +165,23 @@ suite =
             , test "decode succeed with missing relationships for Creator" <|
                 \() ->
                     case decodeString (Decode.resources "posts" postDecoder) Resources.invalidPayloadWithoutCreatorRelationships of
-                        Ok resources ->
+                        Ok document ->
                             Expect.all
-                                [ List.map .id >> Expect.equalLists [ "13608770-76dd-47e5-a1c4-4d0d9c2483ad" ]
-                                , List.map (.links >> Dict.toList)
+                                [ JsonApi.Document.resource >> List.map .id >> Expect.equalLists [ "13608770-76dd-47e5-a1c4-4d0d9c2483ad" ]
+                                , JsonApi.Document.resource
+                                    >> List.map (.links >> Dict.toList)
                                     >> Expect.equalLists
                                         [ [ ( "self", "http://link-to-post/2" ) ]
                                         ]
-                                , List.map .title >> Expect.equalLists [ "First post" ]
-                                , List.map .content >> Expect.equalLists [ "First post content" ]
-                                , List.map (.creator >> .firstname) >> Expect.equalLists [ "John" ]
-                                , List.map (.creator >> .lastname) >> Expect.equalLists [ "Doe" ]
-                                , List.map (.comments >> List.map .content) >> Expect.equalLists [ [ "Comment 2 content", "Comment 3 content" ] ]
+                                , JsonApi.Document.resource >> List.map .title >> Expect.equalLists [ "First post" ]
+                                , JsonApi.Document.resource >> List.map .content >> Expect.equalLists [ "First post content" ]
+                                , JsonApi.Document.resource >> List.map (.creator >> .firstname) >> Expect.equalLists [ "John" ]
+                                , JsonApi.Document.resource >> List.map (.creator >> .lastname) >> Expect.equalLists [ "Doe" ]
+                                , JsonApi.Document.resource >> List.map (.comments >> List.map .content) >> Expect.equalLists [ [ "Comment 2 content", "Comment 3 content" ] ]
+                                , JsonApi.Document.meta >> Expect.equal JsonApi.Internal.Document.NoMeta
+                                , JsonApi.Document.jsonApiVersion >> Expect.equal "1.0"
                                 ]
-                                resources
+                                document
 
                         Err error ->
                             Expect.fail (errorToString error)
@@ -184,34 +202,38 @@ suite =
             [ test "decode success" <|
                 \() ->
                     case decodeString (Decode.resource "posts" postDecoder) Resource.validPayload of
-                        Ok resource ->
+                        Ok document ->
                             Expect.all
-                                [ .id >> Expect.equal "13608770-76dd-47e5-a1c4-4d0d9c2483ad"
-                                , .links >> Dict.toList >> Expect.equalLists [ ( "self", "http://link-to-post/1" ) ]
-                                , .title >> Expect.equal "First post"
-                                , .content >> Expect.equal "First post content"
-                                , .creator >> .firstname >> Expect.equal "John"
-                                , .creator >> .lastname >> Expect.equal "Doe"
-                                , .comments >> List.map .content >> Expect.equalLists [ "Comment 2 content", "Comment 3 content" ]
+                                [ JsonApi.Document.resource >> .id >> Expect.equal "13608770-76dd-47e5-a1c4-4d0d9c2483ad"
+                                , JsonApi.Document.resource >> .links >> Dict.toList >> Expect.equalLists [ ( "self", "http://link-to-post/1" ) ]
+                                , JsonApi.Document.resource >> .title >> Expect.equal "First post"
+                                , JsonApi.Document.resource >> .content >> Expect.equal "First post content"
+                                , JsonApi.Document.resource >> .creator >> .firstname >> Expect.equal "John"
+                                , JsonApi.Document.resource >> .creator >> .lastname >> Expect.equal "Doe"
+                                , JsonApi.Document.resource >> .comments >> List.map .content >> Expect.equalLists [ "Comment 2 content", "Comment 3 content" ]
+                                , JsonApi.Document.meta >> Expect.equal JsonApi.Internal.Document.NoMeta
+                                , JsonApi.Document.jsonApiVersion >> Expect.equal "1.0"
                                 ]
-                                resource
+                                document
 
                         Err error ->
                             Expect.fail (errorToString error)
             , test "decode success with missing links" <|
                 \() ->
                     case decodeString (Decode.resource "posts" postDecoder) Resource.validPayloadWithoutLinks of
-                        Ok resource ->
+                        Ok document ->
                             Expect.all
-                                [ .id >> Expect.equal "13608770-76dd-47e5-a1c4-4d0d9c2483ad"
-                                , .links >> Dict.toList >> Expect.equalLists []
-                                , .title >> Expect.equal "First post"
-                                , .content >> Expect.equal "First post content"
-                                , .creator >> .firstname >> Expect.equal "John"
-                                , .creator >> .lastname >> Expect.equal "Doe"
-                                , .comments >> List.map .content >> Expect.equalLists [ "Comment 2 content", "Comment 3 content" ]
+                                [ JsonApi.Document.resource >> .id >> Expect.equal "13608770-76dd-47e5-a1c4-4d0d9c2483ad"
+                                , JsonApi.Document.resource >> .links >> Dict.toList >> Expect.equalLists []
+                                , JsonApi.Document.resource >> .title >> Expect.equal "First post"
+                                , JsonApi.Document.resource >> .content >> Expect.equal "First post content"
+                                , JsonApi.Document.resource >> .creator >> .firstname >> Expect.equal "John"
+                                , JsonApi.Document.resource >> .creator >> .lastname >> Expect.equal "Doe"
+                                , JsonApi.Document.resource >> .comments >> List.map .content >> Expect.equalLists [ "Comment 2 content", "Comment 3 content" ]
+                                , JsonApi.Document.meta >> Expect.equal JsonApi.Internal.Document.NoMeta
+                                , JsonApi.Document.jsonApiVersion >> Expect.equal "1.0"
                                 ]
-                                resource
+                                document
 
                         Err error ->
                             Expect.fail (errorToString error)
@@ -258,17 +280,19 @@ suite =
             , test "decode succeed with missing relationships" <|
                 \() ->
                     case decodeString (Decode.resource "posts" postWithoutRelationshipsDecoder) Resource.invalidPayloadWithoutRelationships of
-                        Ok resource ->
+                        Ok document ->
                             Expect.all
-                                [ .id >> Expect.equal "13608770-76dd-47e5-a1c4-4d0d9c2483ad"
-                                , .links >> Dict.toList >> Expect.equalLists [ ( "self", "http://link-to-post/2" ) ]
-                                , .title >> Expect.equal "First post"
-                                , .content >> Expect.equal "First post content"
-                                , .creator >> .firstname >> Expect.equal "John"
-                                , .creator >> .lastname >> Expect.equal "Doe"
-                                , .comments >> List.map .content >> Expect.equal []
+                                [ JsonApi.Document.resource >> .id >> Expect.equal "13608770-76dd-47e5-a1c4-4d0d9c2483ad"
+                                , JsonApi.Document.resource >> .links >> Dict.toList >> Expect.equalLists [ ( "self", "http://link-to-post/2" ) ]
+                                , JsonApi.Document.resource >> .title >> Expect.equal "First post"
+                                , JsonApi.Document.resource >> .content >> Expect.equal "First post content"
+                                , JsonApi.Document.resource >> .creator >> .firstname >> Expect.equal "John"
+                                , JsonApi.Document.resource >> .creator >> .lastname >> Expect.equal "Doe"
+                                , JsonApi.Document.resource >> .comments >> List.map .content >> Expect.equal []
+                                , JsonApi.Document.meta >> Expect.equal JsonApi.Internal.Document.NoMeta
+                                , JsonApi.Document.jsonApiVersion >> Expect.equal "1.0"
                                 ]
-                                resource
+                                document
 
                         Err error ->
                             Expect.fail (errorToString error)
@@ -287,17 +311,19 @@ suite =
             , test "decode succeed with missing relationships for Creator" <|
                 \() ->
                     case decodeString (Decode.resource "posts" postDecoder) Resource.invalidPayloadWithoutCreatorRelationships of
-                        Ok resource ->
+                        Ok document ->
                             Expect.all
-                                [ .id >> Expect.equal "13608770-76dd-47e5-a1c4-4d0d9c2483ad"
-                                , .links >> Dict.toList >> Expect.equalLists [ ( "self", "http://link-to-post/2" ) ]
-                                , .title >> Expect.equal "First post"
-                                , .content >> Expect.equal "First post content"
-                                , .creator >> .firstname >> Expect.equal "John"
-                                , .creator >> .lastname >> Expect.equal "Doe"
-                                , .comments >> List.map .content >> Expect.equal [ "Comment 2 content", "Comment 3 content" ]
+                                [ JsonApi.Document.resource >> .id >> Expect.equal "13608770-76dd-47e5-a1c4-4d0d9c2483ad"
+                                , JsonApi.Document.resource >> .links >> Dict.toList >> Expect.equalLists [ ( "self", "http://link-to-post/2" ) ]
+                                , JsonApi.Document.resource >> .title >> Expect.equal "First post"
+                                , JsonApi.Document.resource >> .content >> Expect.equal "First post content"
+                                , JsonApi.Document.resource >> .creator >> .firstname >> Expect.equal "John"
+                                , JsonApi.Document.resource >> .creator >> .lastname >> Expect.equal "Doe"
+                                , JsonApi.Document.resource >> .comments >> List.map .content >> Expect.equal [ "Comment 2 content", "Comment 3 content" ]
+                                , JsonApi.Document.meta >> Expect.equal JsonApi.Internal.Document.NoMeta
+                                , JsonApi.Document.jsonApiVersion >> Expect.equal "1.0"
                                 ]
-                                resource
+                                document
 
                         Err error ->
                             Expect.fail (errorToString error)
@@ -316,13 +342,82 @@ suite =
             , test "included is not needed" <|
                 \() ->
                     case decodeString (Decode.resource "comments" commentDecoder) Resource.commentWithoutIncluded of
-                        Ok resource ->
+                        Ok document ->
                             Expect.all
-                                [ .content >> Expect.equal "Comment content"
+                                [ JsonApi.Document.resource >> .content >> Expect.equal "Comment content"
                                 ]
-                                resource
+                                document
 
                         Err error ->
                             Expect.fail (errorToString error)
+            ]
+        , describe "json api version"
+            [ test "decode succeed with correct json api version" <|
+                \() ->
+                    case decodeString (Decode.resource "posts" postDecoder) DocRes.validPayloadJsonApiVersion of
+                        Ok document ->
+                            Expect.all
+                                [ JsonApi.Document.resource >> .id >> Expect.equal "13608770-76dd-47e5-a1c4-4d0d9c2483ad"
+                                , JsonApi.Document.resource >> .links >> Dict.toList >> Expect.equalLists [ ( "self", "http://link-to-post/1" ) ]
+                                , JsonApi.Document.resource >> .title >> Expect.equal "First post"
+                                , JsonApi.Document.resource >> .content >> Expect.equal "First post content"
+                                , JsonApi.Document.resource >> .creator >> .firstname >> Expect.equal "John"
+                                , JsonApi.Document.resource >> .creator >> .lastname >> Expect.equal "Doe"
+                                , JsonApi.Document.resource >> .comments >> List.map .content >> Expect.equal [ "Comment 2 content", "Comment 3 content" ]
+                                , JsonApi.Document.meta >> Expect.equal JsonApi.Internal.Document.NoMeta
+                                , JsonApi.Document.jsonApiVersion >> Expect.equal "2.0"
+                                ]
+                                document
+
+                        Err error ->
+                            Expect.fail (errorToString error)
+            , test "decode succeed with invalid json api version" <|
+                \() ->
+                    case decodeString (Decode.resource "posts" postDecoder) DocRes.validPayloadWithBadJsonApiVersion of
+                        Ok document ->
+                            Expect.all
+                                [ JsonApi.Document.resource >> .id >> Expect.equal "13608770-76dd-47e5-a1c4-4d0d9c2483ad"
+                                , JsonApi.Document.resource >> .links >> Dict.toList >> Expect.equalLists [ ( "self", "http://link-to-post/1" ) ]
+                                , JsonApi.Document.resource >> .title >> Expect.equal "First post"
+                                , JsonApi.Document.resource >> .content >> Expect.equal "First post content"
+                                , JsonApi.Document.resource >> .creator >> .firstname >> Expect.equal "John"
+                                , JsonApi.Document.resource >> .creator >> .lastname >> Expect.equal "Doe"
+                                , JsonApi.Document.resource >> .comments >> List.map .content >> Expect.equal [ "Comment 2 content", "Comment 3 content" ]
+                                , JsonApi.Document.meta >> Expect.equal JsonApi.Internal.Document.NoMeta
+                                , JsonApi.Document.jsonApiVersion >> Expect.equal "1.0"
+                                ]
+                                document
+
+                        Err error ->
+                            Expect.fail (errorToString error)
+            ]
+        , describe "meta"
+            [ test "decode resource succeed with correct meta decoder" <|
+                \() ->
+                    case decodeString (Decode.resourceWithMeta "posts" postDecoder metaDecoder) DocRes.validPayloadMeta of
+                        Ok document ->
+                            Expect.all
+                                [ JsonApi.Document.resource >> .id >> Expect.equal "13608770-76dd-47e5-a1c4-4d0d9c2483ad"
+                                , JsonApi.Document.resource >> .links >> Dict.toList >> Expect.equalLists [ ( "self", "http://link-to-post/1" ) ]
+                                , JsonApi.Document.resource >> .title >> Expect.equal "First post"
+                                , JsonApi.Document.resource >> .content >> Expect.equal "First post content"
+                                , JsonApi.Document.resource >> .creator >> .firstname >> Expect.equal "John"
+                                , JsonApi.Document.resource >> .creator >> .lastname >> Expect.equal "Doe"
+                                , JsonApi.Document.resource >> .comments >> List.map .content >> Expect.equal [ "Comment 2 content", "Comment 3 content" ]
+                                , JsonApi.Document.meta >> Expect.equal { redirect = True }
+                                , JsonApi.Document.jsonApiVersion >> Expect.equal "1.0"
+                                ]
+                                document
+
+                        Err error ->
+                            Expect.fail (errorToString error)
+            , test "decode failed with no meta object" <|
+                \() ->
+                    decodeString (Decode.resourceWithMeta "posts" postDecoder metaDecoder) DocRes.validPayloadNoMeta
+                        |> Expect.err
+            , test "decode failed with invalid meta object" <|
+                \() ->
+                    decodeString (Decode.resourceWithMeta "posts" postDecoder metaDecoder) DocRes.validPayloadBadMeta
+                        |> Expect.err
             ]
         ]

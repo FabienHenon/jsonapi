@@ -1,16 +1,16 @@
-module JsonApi.ResourceInfoTest exposing (getInternal, suite)
+module JsonApi.ResourceTest exposing (getInternal, suite)
 
 import Dict exposing (Dict)
 import Expect exposing (Expectation)
 import Json.Encode exposing (encode, object, string)
-import JsonApi exposing (ResourceInfo, build, id, links, relationship, relationships, withAttributes, withId, withLinks, withRelationship)
 import JsonApi.Internal.ResourceInfo as Internal
+import JsonApi.Resource exposing (Resource, build, id, links, relationship, relationships, withAttributes, withId, withLinks, withRelationship)
 import Test exposing (..)
 
 
 suite : Test
 suite =
-    describe "ResourceInfo"
+    describe "Resource"
         [ test "empty resource info has nothing except a type" <|
             \() ->
                 build "test"
@@ -22,11 +22,11 @@ suite =
                         , getInternal .relationships >> Dict.toList >> Expect.equalLists []
                         , getInternal .included >> Expect.equalLists []
                         ]
-        , test "fromResourceInfo has resourceInfo information plus new type" <|
+        , test "fromResource has resource information plus new type" <|
             \() ->
                 build "test"
-                    |> JsonApi.withId "test-id"
-                    |> JsonApi.fromResourceInfo "new-test"
+                    |> JsonApi.Resource.withId "test-id"
+                    |> JsonApi.Resource.fromResource "new-test"
                     |> Expect.all
                         [ id >> Expect.equal "test-id"
                         , getInternal .type_ >> Expect.equal "new-test"
@@ -160,6 +160,6 @@ suite =
         ]
 
 
-getInternal : (Internal.ResourceInfoInternal -> b) -> ResourceInfo -> b
+getInternal : (Internal.ResourceInfoInternal -> b) -> Resource -> b
 getInternal mapper (Internal.ResourceInfo resourceInfo) =
     mapper resourceInfo
