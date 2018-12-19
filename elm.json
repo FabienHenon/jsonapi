@@ -3,7 +3,7 @@
     "name": "FabienHenon/jsonapi",
     "summary": "JsonAPI decoder and encoder functions",
     "license": "BSD-3-Clause",
-    "version": "1.2.1",
+    "version": "2.0.0",
     "exposed-modules": [
         "JsonApi.Decode",
         "JsonApi.Document",

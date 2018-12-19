@@ -137,7 +137,7 @@ _Example json:_
 
 # Decoders
 
-@docs resources, resource, resourcesWithMeta, resourceWithMeta, relationship, relationships
+@docs resources, resource, resourcesWithMeta, resourceWithMeta, relationship, relationships, meta
 
 
 # Errors
