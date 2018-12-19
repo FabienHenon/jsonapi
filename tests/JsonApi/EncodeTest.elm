@@ -300,6 +300,19 @@ suite =
 
                         Err error ->
                             Expect.fail (errorToString error)
+            , test "encode only meta object" <|
+                \() ->
+                    case encode 0 (Encode.document docWithOnlyMeta) |> decodeString (Decode.meta metaDecoder) of
+                        Ok document ->
+                            Expect.all
+                                [ JsonApi.Document.resource >> Expect.equal JsonApi.Internal.Document.NoData
+                                , JsonApi.Document.meta >> Expect.equal { redirect = True }
+                                , JsonApi.Document.jsonApiVersion >> Expect.equal "1.0"
+                                ]
+                                document
+
+                        Err error ->
+                            Expect.fail (errorToString error)
             ]
         ]
 
@@ -464,4 +477,9 @@ resourcesToDocWithMeta : List Resource -> Document
 resourcesToDocWithMeta res =
     Document.build
         |> Document.withResources res
+        |> Document.withMeta metaEncoded
+
+docWithOnlyMeta : Document
+docWithOnlyMeta =
+    Document.build
         |> Document.withMeta metaEncoded

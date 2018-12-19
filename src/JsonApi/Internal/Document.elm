@@ -3,6 +3,7 @@ module JsonApi.Internal.Document exposing
     , DocumentEncode(..)
     , DocumentEncodeInternal
     , DocumentInternal
+    , NoData(..)
     , NoMeta(..)
     )
 
@@ -12,6 +13,10 @@ import JsonApi.Internal.ResourceInfo as Internal
 
 type NoMeta
     = NoMeta
+
+
+type NoData
+    = NoData
 
 
 type Document meta data

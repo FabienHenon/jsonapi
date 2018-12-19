@@ -1,5 +1,5 @@
 module JsonApi.Document exposing
-    ( Document, NoMeta
+    ( Document, NoMeta, NoData
     , jsonApiVersion, meta, resource
     )
 
@@ -8,7 +8,7 @@ module JsonApi.Document exposing
 
 # Types
 
-@docs Document, NoMeta
+@docs Document, NoMeta, NoData
 
 
 # Getter functions
@@ -25,6 +25,13 @@ there is no meta to be decoded in this `Document`.
 -}
 type alias NoMeta =
     Internal.NoMeta
+
+
+{-| `NoData` is a type of resource that means there is no `data` object or array in
+the json api document.
+-}
+type alias NoData =
+    Internal.NoData
 
 
 {-| The `Document` represents the global Json API document.

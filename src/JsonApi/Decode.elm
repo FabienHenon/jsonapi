@@ -1,4 +1,7 @@
-module JsonApi.Decode exposing (resources, resource, resourcesWithMeta, resourceWithMeta, relationship, relationships)
+module JsonApi.Decode exposing
+    ( resources, resource, resourcesWithMeta, resourceWithMeta, relationship, relationships
+    , meta
+    )
 
 {-| Provides functions to decode json api document with their resources and their relationships
 
@@ -416,6 +419,37 @@ resource_ : String -> (Resource -> Decoder a) -> Decoder a
 resource_ type_ decoder =
     oneOf [ field "included" includedDecoder, succeed [] ]
         |> andThen (resourceDataDecoder type_ decoder)
+
+
+{-| Decode a document, its meta object and no resource from the json api content.
+
+You pass it the meta decoder and it will return a
+new `Decoder` representing a `Document` with your meta object and no resource.
+
+**(No `data` property is decoded from the json api document)**
+
+Here is an example of document `Decoder` with only meta:
+
+    type alias Meta =
+        { redirect : Bool
+        }
+
+    metaDecoder : Decoder Meta
+    metaDecoder =
+        map Meta
+            (field "redirect" bool)
+
+    -- Decoder for our meta object from json api
+    meta metaDecoder
+
+-}
+meta : Decoder meta -> Decoder (Document.Document meta Document.NoData)
+meta metaDecoder_ =
+    map3 DocInternal.DocumentInternal
+        jsonApiVersionDecoder
+        (metaDecoder metaDecoder_)
+        (succeed DocInternal.NoData)
+        |> map DocInternal.Document
 
 
 

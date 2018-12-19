@@ -1,4 +1,4 @@
-module JsonApi.Data.DocumentPayloads exposing (validPayloadBadMeta, validPayloadJsonApiVersion, validPayloadMeta, validPayloadNoMeta, validPayloadWithBadJsonApiVersion)
+module JsonApi.Data.DocumentPayloads exposing (validPayloadBadMeta, validPayloadOnlyMeta, validPayloadJsonApiVersion, validPayloadMeta, validPayloadNoMeta, validPayloadWithBadJsonApiVersion)
 
 
 validPayloadJsonApiVersion : String
@@ -414,5 +414,15 @@ validPayloadMeta =
                 "relationships": {}
             }
         ]
+    }
+    """
+
+validPayloadOnlyMeta : String
+validPayloadOnlyMeta =
+    """
+    {
+        "meta": {
+            "redirect": true
+        }
     }
     """

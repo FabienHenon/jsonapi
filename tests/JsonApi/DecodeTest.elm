@@ -411,6 +411,19 @@ suite =
 
                         Err error ->
                             Expect.fail (errorToString error)
+            , test "decode meta succeed even with no data object" <|
+                \() ->
+                    case decodeString (Decode.meta metaDecoder) DocRes.validPayloadOnlyMeta of
+                        Ok document ->
+                            Expect.all
+                                [ JsonApi.Document.resource >> Expect.equal JsonApi.Internal.Document.NoData
+                                , JsonApi.Document.meta >> Expect.equal { redirect = True }
+                                , JsonApi.Document.jsonApiVersion >> Expect.equal "1.0"
+                                ]
+                                document
+
+                        Err error ->
+                            Expect.fail (errorToString error)
             , test "decode failed with no meta object" <|
                 \() ->
                     decodeString (Decode.resourceWithMeta "posts" postDecoder metaDecoder) DocRes.validPayloadNoMeta
