@@ -20,7 +20,7 @@ suite =
         [ describe "resources"
             [ test "encode resources" <|
                 \() ->
-                    case encode 0 (Encode.document (resourcesToDoc <| List.map postToResource posts)) |> decodeString (Decode.resources "posts" postDecoder) of
+                    case encode 0 (Encode.document (resourcesToDoc <| List.map postToResource posts)) |> decodeString (Decode.resources "posts" postDecoder |> Decode.errorToFailure) of
                         Ok document ->
                             Expect.all
                                 [ JsonApi.Document.resource >> List.map .id >> Expect.equalLists [ "post-1", "post-2" ]
@@ -44,7 +44,7 @@ suite =
                             Expect.fail (errorToString error)
             , test "encode resources with no relationship succeeds with decoder without relationship" <|
                 \() ->
-                    case encode 0 (Encode.document (resourcesToDoc <| List.map postToResourceWithoutRelationship posts)) |> decodeString (Decode.resources "posts" postWithoutRelationshipsDecoder) of
+                    case encode 0 (Encode.document (resourcesToDoc <| List.map postToResourceWithoutRelationship posts)) |> decodeString (Decode.resources "posts" postWithoutRelationshipsDecoder |> Decode.errorToFailure) of
                         Ok document ->
                             Expect.all
                                 [ JsonApi.Document.resource >> List.map .id >> Expect.equalLists [ "post-1", "post-2" ]
@@ -66,11 +66,11 @@ suite =
             , test "encode resources with no relationship fails with decoder with relationship" <|
                 \() ->
                     encode 0 (Encode.document (resourcesToDoc <| List.map postToResourceWithoutRelationship posts))
-                        |> decodeString (Decode.resources "posts" postDecoder)
+                        |> decodeString (Decode.resources "posts" postDecoder |> Decode.errorToFailure)
                         |> Expect.err
             , test "encode resources with no link succeeds" <|
                 \() ->
-                    case encode 0 (Encode.document (resourcesToDoc <| List.map postToResourceWithoutLinks posts)) |> decodeString (Decode.resources "posts" postDecoder) of
+                    case encode 0 (Encode.document (resourcesToDoc <| List.map postToResourceWithoutLinks posts)) |> decodeString (Decode.resources "posts" postDecoder |> Decode.errorToFailure) of
                         Ok document ->
                             Expect.all
                                 [ JsonApi.Document.resource >> List.map .id >> Expect.equalLists [ "post-1", "post-2" ]
@@ -91,7 +91,7 @@ suite =
                             Expect.fail (errorToString error)
             , test "encode resources with no attribute succeeds with decoder without attribute needed" <|
                 \() ->
-                    case encode 0 (Encode.document (resourcesToDoc <| List.map postToResourceWithoutAttributes posts)) |> decodeString (Decode.resources "posts" postWithoutAttributesDecoder) of
+                    case encode 0 (Encode.document (resourcesToDoc <| List.map postToResourceWithoutAttributes posts)) |> decodeString (Decode.resources "posts" postWithoutAttributesDecoder |> Decode.errorToFailure) of
                         Ok document ->
                             Expect.all
                                 [ JsonApi.Document.resource >> List.map .id >> Expect.equalLists [ "post-1", "post-2" ]
@@ -116,23 +116,23 @@ suite =
             , test "encode resources with no attribute fails with decoder with attribute" <|
                 \() ->
                     encode 0 (Encode.document (resourcesToDoc <| List.map postToResourceWithoutAttributes posts))
-                        |> decodeString (Decode.resources "posts" postDecoder)
+                        |> decodeString (Decode.resources "posts" postDecoder |> Decode.errorToFailure)
                         |> Expect.err
             , test "encode resources with no id fails with decoder" <|
                 \() ->
                     encode 0 (Encode.document (resourcesToDoc <| List.map postToResourceWithoutId posts))
-                        |> decodeString (Decode.resources "posts" postDecoder)
+                        |> decodeString (Decode.resources "posts" postDecoder |> Decode.errorToFailure)
                         |> Expect.err
             , test "encode resources makes decoding fail with an object" <|
                 \() ->
                     encode 0 (Encode.document (resourcesToDoc <| List.map postToResource posts))
-                        |> decodeString (Decode.resource "posts" postDecoder)
+                        |> decodeString (Decode.resource "posts" postDecoder |> Decode.errorToFailure)
                         |> Expect.err
             ]
         , describe "resource"
             [ test "encode resource" <|
                 \() ->
-                    case encode 0 (Encode.document (resourceToDoc <| postToResource post2)) |> decodeString (Decode.resource "posts" postDecoder) of
+                    case encode 0 (Encode.document (resourceToDoc <| postToResource post2)) |> decodeString (Decode.resource "posts" postDecoder |> Decode.errorToFailure) of
                         Ok document ->
                             Expect.all
                                 [ JsonApi.Document.resource >> .id >> Expect.equal "post-2"
@@ -151,7 +151,7 @@ suite =
                             Expect.fail (errorToString error)
             , test "encode resource with no relationship succeeds with decoder without relationship" <|
                 \() ->
-                    case encode 0 (Encode.document (resourceToDoc <| postToResourceWithoutRelationship post2)) |> decodeString (Decode.resource "posts" postWithoutRelationshipsDecoder) of
+                    case encode 0 (Encode.document (resourceToDoc <| postToResourceWithoutRelationship post2)) |> decodeString (Decode.resource "posts" postWithoutRelationshipsDecoder |> Decode.errorToFailure) of
                         Ok document ->
                             Expect.all
                                 [ JsonApi.Document.resource >> .id >> Expect.equal "post-2"
@@ -168,11 +168,11 @@ suite =
             , test "encode resource with no relationship fails with decoder with relationship" <|
                 \() ->
                     encode 0 (Encode.document (resourceToDoc <| postToResourceWithoutRelationship post2))
-                        |> decodeString (Decode.resource "posts" postDecoder)
+                        |> decodeString (Decode.resource "posts" postDecoder |> Decode.errorToFailure)
                         |> Expect.err
             , test "encode resource with no link succeeds" <|
                 \() ->
-                    case encode 0 (Encode.document (resourceToDoc <| postToResourceWithoutLinks post2)) |> decodeString (Decode.resource "posts" postDecoder) of
+                    case encode 0 (Encode.document (resourceToDoc <| postToResourceWithoutLinks post2)) |> decodeString (Decode.resource "posts" postDecoder |> Decode.errorToFailure) of
                         Ok document ->
                             Expect.all
                                 [ JsonApi.Document.resource >> .id >> Expect.equal "post-2"
@@ -188,7 +188,7 @@ suite =
                             Expect.fail (errorToString error)
             , test "encode resource with no attribute succeeds with decoder without attribute" <|
                 \() ->
-                    case encode 0 (Encode.document (resourceToDoc <| postToResourceWithoutAttributes post2)) |> decodeString (Decode.resource "posts" postWithoutAttributesDecoder) of
+                    case encode 0 (Encode.document (resourceToDoc <| postToResourceWithoutAttributes post2)) |> decodeString (Decode.resource "posts" postWithoutAttributesDecoder |> Decode.errorToFailure) of
                         Ok document ->
                             Expect.all
                                 [ JsonApi.Document.resource >> .id >> Expect.equal "post-2"
@@ -208,17 +208,17 @@ suite =
             , test "encode resource with no attribute fails with decoder with attribute" <|
                 \() ->
                     encode 0 (Encode.document (resourceToDoc <| postToResourceWithoutAttributes post2))
-                        |> decodeString (Decode.resource "posts" postDecoder)
+                        |> decodeString (Decode.resource "posts" postDecoder |> Decode.errorToFailure)
                         |> Expect.err
             , test "encode resource with no id fails with decoder" <|
                 \() ->
                     encode 0 (Encode.document (resourceToDoc <| postToResourceWithoutId post2))
-                        |> decodeString (Decode.resource "posts" postDecoder)
+                        |> decodeString (Decode.resource "posts" postDecoder |> Decode.errorToFailure)
                         |> Expect.err
             , test "encode resource makes decoding fail with a list" <|
                 \() ->
                     encode 0 (Encode.document (resourceToDoc <| postToResource post2))
-                        |> decodeString (Decode.resources "posts" postDecoder)
+                        |> decodeString (Decode.resources "posts" postDecoder |> Decode.errorToFailure)
                         |> Expect.err
             ]
         , describe "relationships"
@@ -252,7 +252,7 @@ suite =
         , describe "json api"
             [ test "encode resources with json api version" <|
                 \() ->
-                    case encode 0 (Encode.document (resourcesToDocWithJsonApiVersion <| List.map postToResource posts)) |> decodeString (Decode.resources "posts" postDecoder) of
+                    case encode 0 (Encode.document (resourcesToDocWithJsonApiVersion <| List.map postToResource posts)) |> decodeString (Decode.resources "posts" postDecoder |> Decode.errorToFailure) of
                         Ok document ->
                             Expect.all
                                 [ JsonApi.Document.resource >> List.map .id >> Expect.equalLists [ "post-1", "post-2" ]
@@ -278,7 +278,7 @@ suite =
         , describe "meta"
             [ test "encode resources with meta object" <|
                 \() ->
-                    case encode 0 (Encode.document (resourcesToDocWithMeta <| List.map postToResource posts)) |> decodeString (Decode.resourcesWithMeta "posts" postDecoder metaDecoder) of
+                    case encode 0 (Encode.document (resourcesToDocWithMeta <| List.map postToResource posts)) |> decodeString (Decode.resourcesWithMeta "posts" postDecoder metaDecoder |> Decode.errorToFailure) of
                         Ok document ->
                             Expect.all
                                 [ JsonApi.Document.resource >> List.map .id >> Expect.equalLists [ "post-1", "post-2" ]
@@ -302,7 +302,7 @@ suite =
                             Expect.fail (errorToString error)
             , test "encode only meta object" <|
                 \() ->
-                    case encode 0 (Encode.document docWithOnlyMeta) |> decodeString (Decode.meta metaDecoder) of
+                    case encode 0 (Encode.document docWithOnlyMeta) |> decodeString (Decode.meta metaDecoder |> Decode.errorToFailure) of
                         Ok document ->
                             Expect.all
                                 [ JsonApi.Document.resource >> Expect.equal JsonApi.Internal.Document.NoData
@@ -478,6 +478,7 @@ resourcesToDocWithMeta res =
     Document.build
         |> Document.withResources res
         |> Document.withMeta metaEncoded
+
 
 docWithOnlyMeta : Document
 docWithOnlyMeta =

@@ -1,5 +1,6 @@
 module JsonApi.Decode exposing
     ( resources, resource, resourcesWithMeta, resourceWithMeta, relationship, relationships
+    , Error, errorToFailure
     , meta
     )
 
@@ -138,10 +139,15 @@ _Example json:_
 
 @docs resources, resource, resourcesWithMeta, resourceWithMeta, relationship, relationships
 
+
+# Errors
+
+@docs Error, errorToFailure
+
 -}
 
 import Dict exposing (Dict)
-import Json.Decode exposing (Decoder, Value, andThen, at, decodeValue, dict, errorToString, fail, field, list, map, map3, maybe, oneOf, string, succeed, value)
+import Json.Decode exposing (Decoder, Value, andThen, at, decodeValue, dict, errorToString, fail, field, list, map, map3, map8, maybe, oneOf, string, succeed, value)
 import Json.Decode.Extra exposing (andMap)
 import JsonApi.Document as Document
 import JsonApi.Internal.Document as DocInternal
@@ -153,6 +159,20 @@ import List.Extra
 defaultJsonApiVersion : String
 defaultJsonApiVersion =
     "1.0"
+
+
+{-| `Error` object containing information about the error in the document
+-}
+type alias Error =
+    { id : Maybe String
+    , links : Maybe (Dict String String)
+    , status : Maybe String
+    , code : Maybe String
+    , title : Maybe String
+    , detail : Maybe String
+    , source : Maybe Value
+    , meta : Maybe Value
+    }
 
 
 {-| Decode a relationship from your json api resources.
@@ -258,7 +278,8 @@ relationships type_ (Internal.ResourceInfo info) decoder =
 {-| Decode a document and its resources from the json api content.
 
 You pass it the type of the resources (`"posts"` in our example above) and the resource decoder and it will return a
-new `Decoder` representing a `Document` with `NoMeta` and a `List` of your resources.
+new `Decoder` representing a `Document` with `NoMeta` and a `List` of your resources, **OR**
+a list of `Error`s.
 
 Here is an example of resource `Decoder`:
 
@@ -279,19 +300,21 @@ Here is an example of resource `Decoder`:
     resources "posts" postDecoder
 
 -}
-resources : String -> (Resource -> Decoder a) -> Decoder (Document.Document Document.NoMeta (List a))
+resources : String -> (Resource -> Decoder a) -> Decoder (Result (List Error) (Document.Document Document.NoMeta (List a)))
 resources type_ decoder =
     map3 DocInternal.DocumentInternal
         jsonApiVersionDecoder
         (succeed DocInternal.NoMeta)
         (resources_ type_ decoder)
         |> map DocInternal.Document
+        |> checkForErrors
 
 
 {-| Decode a document, its meta object and its resources from the json api content.
 
 You pass it the type of the resources (`"posts"` in our example above), the resource decoder and the meta decoder and it will return a
-new `Decoder` representing a `Document` with your meta object and a `List` of your resources.
+new `Decoder` representing a `Document` with your meta object and a `List` of your resources, **OR**
+a list of `Error`s.
 
 Here is an example of resource `Decoder` with meta:
 
@@ -321,13 +344,14 @@ Here is an example of resource `Decoder` with meta:
     resourcesWithMeta "posts" postDecoder metaDecoder
 
 -}
-resourcesWithMeta : String -> (Resource -> Decoder a) -> Decoder meta -> Decoder (Document.Document meta (List a))
+resourcesWithMeta : String -> (Resource -> Decoder a) -> Decoder meta -> Decoder (Result (List Error) (Document.Document meta (List a)))
 resourcesWithMeta type_ decoder metaDecoder_ =
     map3 DocInternal.DocumentInternal
         jsonApiVersionDecoder
         (metaDecoder metaDecoder_)
         (resources_ type_ decoder)
         |> map DocInternal.Document
+        |> checkForErrors
 
 
 resources_ : String -> (Resource -> Decoder a) -> Decoder (List a)
@@ -339,7 +363,8 @@ resources_ type_ decoder =
 {-| Decode a document with only one resource from the json api content.
 
 You pass it the type of the resource (`"posts"` in our example above) and the resource decoder and it will return a
-new `Decoder` representing a `Document` with `NoMeta` and your resource.
+new `Decoder` representing a `Document` with `NoMeta` and your resource, **OR**
+a list of `Error`s.
 
 **(The json `data` attribute is an object and not a list)**
 
@@ -362,19 +387,21 @@ Here is an example of resource `Decoder`:
     resource "posts" postDecoder
 
 -}
-resource : String -> (Resource -> Decoder a) -> Decoder (Document.Document Document.NoMeta a)
+resource : String -> (Resource -> Decoder a) -> Decoder (Result (List Error) (Document.Document Document.NoMeta a))
 resource type_ decoder =
     map3 DocInternal.DocumentInternal
         jsonApiVersionDecoder
         (succeed DocInternal.NoMeta)
         (resource_ type_ decoder)
         |> map DocInternal.Document
+        |> checkForErrors
 
 
 {-| Decode a document, its meta object and only one resource from the json api content.
 
 You pass it the type of the resources (`"posts"` in our example above), the resource decoder and the meta decoder and it will return a
-new `Decoder` representing a `Document` with your meta object and your resource.
+new `Decoder` representing a `Document` with your meta object and your resource, **OR**
+a list of `Error`s.
 
 **(The json `data` attribute is an object and not a list)**
 
@@ -406,13 +433,14 @@ Here is an example of resource `Decoder` with meta:
     resourceWithMeta "posts" postDecoder metaDecoder
 
 -}
-resourceWithMeta : String -> (Resource -> Decoder a) -> Decoder meta -> Decoder (Document.Document meta a)
+resourceWithMeta : String -> (Resource -> Decoder a) -> Decoder meta -> Decoder (Result (List Error) (Document.Document meta a))
 resourceWithMeta type_ decoder metaDecoder_ =
     map3 DocInternal.DocumentInternal
         jsonApiVersionDecoder
         (metaDecoder metaDecoder_)
         (resource_ type_ decoder)
         |> map DocInternal.Document
+        |> checkForErrors
 
 
 resource_ : String -> (Resource -> Decoder a) -> Decoder a
@@ -424,7 +452,8 @@ resource_ type_ decoder =
 {-| Decode a document, its meta object and no resource from the json api content.
 
 You pass it the meta decoder and it will return a
-new `Decoder` representing a `Document` with your meta object and no resource.
+new `Decoder` representing a `Document` with your meta object and no resource, **OR**
+a list of `Error`s.
 
 **(No `data` property is decoded from the json api document)**
 
@@ -443,17 +472,61 @@ Here is an example of document `Decoder` with only meta:
     meta metaDecoder
 
 -}
-meta : Decoder meta -> Decoder (Document.Document meta Document.NoData)
+meta : Decoder meta -> Decoder (Result (List Error) (Document.Document meta Document.NoData))
 meta metaDecoder_ =
     map3 DocInternal.DocumentInternal
         jsonApiVersionDecoder
         (metaDecoder metaDecoder_)
         (succeed DocInternal.NoData)
         |> map DocInternal.Document
+        |> checkForErrors
+
+
+{-| Converts a `Decoder` with an `Err` `Result` to a failed `Decoder`, and
+a `Decoder` with an `Ok` `Result` to a succeed `Decoder` with the `Document`.
+-}
+errorToFailure : Decoder (Result (List Error) (Document.Document meta data)) -> Decoder (Document.Document meta data)
+errorToFailure =
+    andThen
+        (\result ->
+            case result of
+                Err errors ->
+                    errors
+                        |> List.head
+                        |> Maybe.andThen .title
+                        |> Maybe.withDefault "errors received"
+                        |> fail
+
+                Ok doc ->
+                    succeed doc
+        )
 
 
 
 -- LOGIC
+
+
+checkForErrors : Decoder (Document.Document meta data) -> Decoder (Result (List Error) (Document.Document meta data))
+checkForErrors docDecoder =
+    oneOf [ errorsDecoder |> map Err, docDecoder |> map Ok ]
+
+
+errorsDecoder : Decoder (List Error)
+errorsDecoder =
+    field "errors" (list errorDecoder)
+
+
+errorDecoder : Decoder Error
+errorDecoder =
+    map8 Error
+        (maybe <| field "id" string)
+        (maybe <| field "links" (dict string))
+        (maybe <| field "status" string)
+        (maybe <| field "code" string)
+        (maybe <| field "title" string)
+        (maybe <| field "detail" string)
+        (maybe <| field "source" value)
+        (maybe <| field "meta" value)
 
 
 metaDecoder : Decoder meta -> Decoder meta

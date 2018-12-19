@@ -17,6 +17,8 @@ module JsonApi.Document exposing
 
 -}
 
+import Dict exposing (Dict)
+import Json.Decode exposing (Value)
 import JsonApi.Internal.Document as Internal
 
 

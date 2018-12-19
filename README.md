@@ -95,14 +95,16 @@ Finally you will want to decode your json payload and retrieve your resources:
 Decode.resources "posts" postDecoder
 ```
 
-By calling the function `resources` you are creating your final decoder. You have to pass it the type of your resources, your resource decoder and it will return a `Decoder` for a `JsonApi.Document` containing a `List` of your resources. _You can also call `resource` that will return a `Decoder` for a `JsonApi.Document` containing only one resource if there is only one in your payload_
+By calling the function `resources` you are creating your final decoder. You have to pass it the type of your resources, your resource decoder and it will return a `Decoder` for a `JsonApi.Document` containing a `List` of your resources, **or** it will return a list of `Error` if the json api document contains an `errors` property. _You can also call `resource` that will return a `Decoder` for a `JsonApi.Document` containing only one resource if there is only one in your payload_
 
 You can also use the functions `resourceWithMeta` and `resourcesWithMeta` that will take one more parameter which is a `Decoder` for an object corresponding to the object in the `meta` property of the json payload you want to decode.
+
+There is also a function called `errorToFailure` that allows you to transform the result of functions like `resources` which is a `Decoder` of a `Result (List Error) (Document meta data)` directy to a `Decoder` of a `Document meta data`. With this function you are getting rid of the `Result` and in case of `errors` in the document, the `Decoder` will fail.
 
 You can then finally decode your payload:
 
 ```elm
-decode : Result String (Document NoMeta (List Post))
+decode : Result String (Result (List Error) (Document NoMeta (List Post)))
 decode =
         Json.Decode.decodeString (Decode.resources "posts" postDecoder) payload
 

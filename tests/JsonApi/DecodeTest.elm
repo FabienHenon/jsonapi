@@ -19,7 +19,7 @@ suite =
         [ describe "resources"
             [ test "decode success" <|
                 \() ->
-                    case decodeString (Decode.resources "posts" postDecoder) Resources.validPayload of
+                    case decodeString (Decode.resources "posts" postDecoder |> Decode.errorToFailure) Resources.validPayload of
                         Ok document ->
                             Expect.all
                                 [ JsonApi.Document.resource >> List.map .id >> Expect.equalLists [ "13608770-76dd-47e5-a1c4-4d0d9c2483ad", "13608770-76dd-47e5-a1c4-4d0d9c2483ae" ]
@@ -43,7 +43,7 @@ suite =
                             Expect.fail (errorToString error)
             , test "decode success with missing links" <|
                 \() ->
-                    case decodeString (Decode.resources "posts" postDecoder) Resources.validPayloadWithoutLinks of
+                    case decodeString (Decode.resources "posts" postDecoder |> Decode.errorToFailure) Resources.validPayloadWithoutLinks of
                         Ok document ->
                             Expect.all
                                 [ JsonApi.Document.resource >> List.map .id >> Expect.equalLists [ "13608770-76dd-47e5-a1c4-4d0d9c2483ad" ]
@@ -66,7 +66,7 @@ suite =
                             Expect.fail (errorToString error)
             , test "decode success with null relationship" <|
                 \() ->
-                    case decodeString (Decode.resources "posts" postDecoderWithoutCreator) Resources.validPayloadWithNullRelationship of
+                    case decodeString (Decode.resources "posts" postDecoderWithoutCreator |> Decode.errorToFailure) Resources.validPayloadWithNullRelationship of
                         Ok document ->
                             Expect.all
                                 [ JsonApi.Document.resource >> List.map .id >> Expect.equalLists [ "13608770-76dd-47e5-a1c4-4d0d9c2483ad" ]
@@ -89,47 +89,47 @@ suite =
                             Expect.fail (errorToString error)
             , test "decode faild with missing data field" <|
                 \() ->
-                    decodeString (Decode.resources "posts" postDecoder) Resources.invalidPayloadWithoutData
+                    decodeString (Decode.resources "posts" postDecoder |> Decode.errorToFailure) Resources.invalidPayloadWithoutData
                         |> Expect.err
             , test "decode failed with missing attributes field" <|
                 \() ->
-                    decodeString (Decode.resources "posts" postDecoder) Resources.invalidPayloadWithoutAttributes
+                    decodeString (Decode.resources "posts" postDecoder |> Decode.errorToFailure) Resources.invalidPayloadWithoutAttributes
                         |> Expect.err
             , test "decode failed with missing id field" <|
                 \() ->
-                    decodeString (Decode.resources "posts" postDecoder) Resources.invalidPayloadWithoutId
+                    decodeString (Decode.resources "posts" postDecoder |> Decode.errorToFailure) Resources.invalidPayloadWithoutId
                         |> Expect.err
             , test "decode failed with missing type field" <|
                 \() ->
-                    decodeString (Decode.resources "posts" postDecoder) Resources.invalidPayloadWithoutType
+                    decodeString (Decode.resources "posts" postDecoder |> Decode.errorToFailure) Resources.invalidPayloadWithoutType
                         |> Expect.err
             , test "decode resources failed" <|
                 \() ->
-                    decodeString (Decode.resources "posts" badPostDecoder) Resources.validPayload
+                    decodeString (Decode.resources "posts" badPostDecoder |> Decode.errorToFailure) Resources.validPayload
                         |> Expect.err
             , test "decode failed with bad creatorDecoder" <|
                 \() ->
-                    decodeString (Decode.resources "posts" postBadCreatorDecoder) Resources.validPayload
+                    decodeString (Decode.resources "posts" postBadCreatorDecoder |> Decode.errorToFailure) Resources.validPayload
                         |> Expect.err
             , test "decode failed with relationship not in relationships" <|
                 \() ->
-                    decodeString (Decode.resources "posts" postDecoder) Resources.invalidPayloadWithoutRelationshipInRelationships
+                    decodeString (Decode.resources "posts" postDecoder |> Decode.errorToFailure) Resources.invalidPayloadWithoutRelationshipInRelationships
                         |> Expect.err
             , test "decode failed with relationship id not found" <|
                 \() ->
-                    decodeString (Decode.resources "posts" postDecoder) Resources.invalidPayloadWithoutRelationshipIdNotFound
+                    decodeString (Decode.resources "posts" postDecoder |> Decode.errorToFailure) Resources.invalidPayloadWithoutRelationshipIdNotFound
                         |> Expect.err
             , test "decode failed with relationship type not found" <|
                 \() ->
-                    decodeString (Decode.resources "posts" postDecoder) Resources.invalidPayloadWithoutRelationshipTypeNotFound
+                    decodeString (Decode.resources "posts" postDecoder |> Decode.errorToFailure) Resources.invalidPayloadWithoutRelationshipTypeNotFound
                         |> Expect.err
             , test "decode failed with relationship not in included" <|
                 \() ->
-                    decodeString (Decode.resources "posts" postDecoder) Resources.invalidPayloadWithoutRelationshipInIncluded
+                    decodeString (Decode.resources "posts" postDecoder |> Decode.errorToFailure) Resources.invalidPayloadWithoutRelationshipInIncluded
                         |> Expect.err
             , test "decode succeed with missing relationships" <|
                 \() ->
-                    case decodeString (Decode.resources "posts" postWithoutRelationshipsDecoder) Resources.invalidPayloadWithoutRelationships of
+                    case decodeString (Decode.resources "posts" postWithoutRelationshipsDecoder |> Decode.errorToFailure) Resources.invalidPayloadWithoutRelationships of
                         Ok document ->
                             Expect.all
                                 [ JsonApi.Document.resource >> List.map .id >> Expect.equalLists [ "13608770-76dd-47e5-a1c4-4d0d9c2483ad" ]
@@ -152,19 +152,19 @@ suite =
                             Expect.fail (errorToString error)
             , test "decode failed with missing attributes field for Creator" <|
                 \() ->
-                    decodeString (Decode.resources "posts" postDecoder) Resources.invalidPayloadWithoutCreatorAttributes
+                    decodeString (Decode.resources "posts" postDecoder |> Decode.errorToFailure) Resources.invalidPayloadWithoutCreatorAttributes
                         |> Expect.err
             , test "decode failed with missing id field for Creator" <|
                 \() ->
-                    decodeString (Decode.resources "posts" postDecoder) Resources.invalidPayloadWithoutCreatorId
+                    decodeString (Decode.resources "posts" postDecoder |> Decode.errorToFailure) Resources.invalidPayloadWithoutCreatorId
                         |> Expect.err
             , test "decode failed with missing type field for Creator" <|
                 \() ->
-                    decodeString (Decode.resources "posts" postDecoder) Resources.invalidPayloadWithoutCreatorType
+                    decodeString (Decode.resources "posts" postDecoder |> Decode.errorToFailure) Resources.invalidPayloadWithoutCreatorType
                         |> Expect.err
             , test "decode succeed with missing relationships for Creator" <|
                 \() ->
-                    case decodeString (Decode.resources "posts" postDecoder) Resources.invalidPayloadWithoutCreatorRelationships of
+                    case decodeString (Decode.resources "posts" postDecoder |> Decode.errorToFailure) Resources.invalidPayloadWithoutCreatorRelationships of
                         Ok document ->
                             Expect.all
                                 [ JsonApi.Document.resource >> List.map .id >> Expect.equalLists [ "13608770-76dd-47e5-a1c4-4d0d9c2483ad" ]
@@ -187,21 +187,21 @@ suite =
                             Expect.fail (errorToString error)
             , test "decode failed with list of creators instead of one element" <|
                 \() ->
-                    decodeString (Decode.resources "posts" postDecoder) Resources.invalidPayloadCreatorIsList
+                    decodeString (Decode.resources "posts" postDecoder |> Decode.errorToFailure) Resources.invalidPayloadCreatorIsList
                         |> Expect.err
             , test "decode failed with one owner instead of list" <|
                 \() ->
-                    decodeString (Decode.resources "posts" postDecoder) Resources.invalidPayloadCommentsIsOneElement
+                    decodeString (Decode.resources "posts" postDecoder |> Decode.errorToFailure) Resources.invalidPayloadCommentsIsOneElement
                         |> Expect.err
             , test "decode failed with one data object instead of list" <|
                 \() ->
-                    decodeString (Decode.resources "posts" postDecoder) Resources.dataIsObject
+                    decodeString (Decode.resources "posts" postDecoder |> Decode.errorToFailure) Resources.dataIsObject
                         |> Expect.err
             ]
         , describe "resource"
             [ test "decode success" <|
                 \() ->
-                    case decodeString (Decode.resource "posts" postDecoder) Resource.validPayload of
+                    case decodeString (Decode.resource "posts" postDecoder |> Decode.errorToFailure) Resource.validPayload of
                         Ok document ->
                             Expect.all
                                 [ JsonApi.Document.resource >> .id >> Expect.equal "13608770-76dd-47e5-a1c4-4d0d9c2483ad"
@@ -220,7 +220,7 @@ suite =
                             Expect.fail (errorToString error)
             , test "decode success with missing links" <|
                 \() ->
-                    case decodeString (Decode.resource "posts" postDecoder) Resource.validPayloadWithoutLinks of
+                    case decodeString (Decode.resource "posts" postDecoder |> Decode.errorToFailure) Resource.validPayloadWithoutLinks of
                         Ok document ->
                             Expect.all
                                 [ JsonApi.Document.resource >> .id >> Expect.equal "13608770-76dd-47e5-a1c4-4d0d9c2483ad"
@@ -239,47 +239,47 @@ suite =
                             Expect.fail (errorToString error)
             , test "decode faild with missing data field" <|
                 \() ->
-                    decodeString (Decode.resource "posts" postDecoder) Resource.invalidPayloadWithoutData
+                    decodeString (Decode.resource "posts" postDecoder |> Decode.errorToFailure) Resource.invalidPayloadWithoutData
                         |> Expect.err
             , test "decode failed with missing attributes field" <|
                 \() ->
-                    decodeString (Decode.resource "posts" postDecoder) Resource.invalidPayloadWithoutAttributes
+                    decodeString (Decode.resource "posts" postDecoder |> Decode.errorToFailure) Resource.invalidPayloadWithoutAttributes
                         |> Expect.err
             , test "decode failed with missing id field" <|
                 \() ->
-                    decodeString (Decode.resource "posts" postDecoder) Resource.invalidPayloadWithoutId
+                    decodeString (Decode.resource "posts" postDecoder |> Decode.errorToFailure) Resource.invalidPayloadWithoutId
                         |> Expect.err
             , test "decode failed with missing type field" <|
                 \() ->
-                    decodeString (Decode.resource "posts" postDecoder) Resource.invalidPayloadWithoutType
+                    decodeString (Decode.resource "posts" postDecoder |> Decode.errorToFailure) Resource.invalidPayloadWithoutType
                         |> Expect.err
             , test "decode resource failed" <|
                 \() ->
-                    decodeString (Decode.resource "posts" badPostDecoder) Resource.validPayload
+                    decodeString (Decode.resource "posts" badPostDecoder |> Decode.errorToFailure) Resource.validPayload
                         |> Expect.err
             , test "decode failed with bad creatorDecoder" <|
                 \() ->
-                    decodeString (Decode.resource "posts" postBadCreatorDecoder) Resource.validPayload
+                    decodeString (Decode.resource "posts" postBadCreatorDecoder |> Decode.errorToFailure) Resource.validPayload
                         |> Expect.err
             , test "decode failed with relationship not in relationships" <|
                 \() ->
-                    decodeString (Decode.resource "posts" postDecoder) Resource.invalidPayloadWithoutRelationshipInRelationships
+                    decodeString (Decode.resource "posts" postDecoder |> Decode.errorToFailure) Resource.invalidPayloadWithoutRelationshipInRelationships
                         |> Expect.err
             , test "decode failed with relationship id not found" <|
                 \() ->
-                    decodeString (Decode.resource "posts" postDecoder) Resource.invalidPayloadWithoutRelationshipIdNotFound
+                    decodeString (Decode.resource "posts" postDecoder |> Decode.errorToFailure) Resource.invalidPayloadWithoutRelationshipIdNotFound
                         |> Expect.err
             , test "decode failed with relationship type not found" <|
                 \() ->
-                    decodeString (Decode.resource "posts" postDecoder) Resource.invalidPayloadWithoutRelationshipTypeNotFound
+                    decodeString (Decode.resource "posts" postDecoder |> Decode.errorToFailure) Resource.invalidPayloadWithoutRelationshipTypeNotFound
                         |> Expect.err
             , test "decode failed with relationship not in included" <|
                 \() ->
-                    decodeString (Decode.resource "posts" postDecoder) Resource.invalidPayloadWithoutRelationshipInIncluded
+                    decodeString (Decode.resource "posts" postDecoder |> Decode.errorToFailure) Resource.invalidPayloadWithoutRelationshipInIncluded
                         |> Expect.err
             , test "decode succeed with missing relationships" <|
                 \() ->
-                    case decodeString (Decode.resource "posts" postWithoutRelationshipsDecoder) Resource.invalidPayloadWithoutRelationships of
+                    case decodeString (Decode.resource "posts" postWithoutRelationshipsDecoder |> Decode.errorToFailure) Resource.invalidPayloadWithoutRelationships of
                         Ok document ->
                             Expect.all
                                 [ JsonApi.Document.resource >> .id >> Expect.equal "13608770-76dd-47e5-a1c4-4d0d9c2483ad"
@@ -298,19 +298,19 @@ suite =
                             Expect.fail (errorToString error)
             , test "decode failed with missing attributes field for Creator" <|
                 \() ->
-                    decodeString (Decode.resource "posts" postDecoder) Resource.invalidPayloadWithoutCreatorAttributes
+                    decodeString (Decode.resource "posts" postDecoder |> Decode.errorToFailure) Resource.invalidPayloadWithoutCreatorAttributes
                         |> Expect.err
             , test "decode failed with missing id field for Creator" <|
                 \() ->
-                    decodeString (Decode.resource "posts" postDecoder) Resource.invalidPayloadWithoutCreatorId
+                    decodeString (Decode.resource "posts" postDecoder |> Decode.errorToFailure) Resource.invalidPayloadWithoutCreatorId
                         |> Expect.err
             , test "decode failed with missing type field for Creator" <|
                 \() ->
-                    decodeString (Decode.resource "posts" postDecoder) Resource.invalidPayloadWithoutCreatorType
+                    decodeString (Decode.resource "posts" postDecoder |> Decode.errorToFailure) Resource.invalidPayloadWithoutCreatorType
                         |> Expect.err
             , test "decode succeed with missing relationships for Creator" <|
                 \() ->
-                    case decodeString (Decode.resource "posts" postDecoder) Resource.invalidPayloadWithoutCreatorRelationships of
+                    case decodeString (Decode.resource "posts" postDecoder |> Decode.errorToFailure) Resource.invalidPayloadWithoutCreatorRelationships of
                         Ok document ->
                             Expect.all
                                 [ JsonApi.Document.resource >> .id >> Expect.equal "13608770-76dd-47e5-a1c4-4d0d9c2483ad"
@@ -329,19 +329,19 @@ suite =
                             Expect.fail (errorToString error)
             , test "decode failed with list of creators instead of one element" <|
                 \() ->
-                    decodeString (Decode.resource "posts" postDecoder) Resource.invalidPayloadCreatorIsList
+                    decodeString (Decode.resource "posts" postDecoder |> Decode.errorToFailure) Resource.invalidPayloadCreatorIsList
                         |> Expect.err
             , test "decode failed with one owner instead of list" <|
                 \() ->
-                    decodeString (Decode.resource "posts" postDecoder) Resource.invalidPayloadCommentsIsOneElement
+                    decodeString (Decode.resource "posts" postDecoder |> Decode.errorToFailure) Resource.invalidPayloadCommentsIsOneElement
                         |> Expect.err
             , test "decode failed with data as list instead of object" <|
                 \() ->
-                    decodeString (Decode.resource "posts" postDecoder) Resource.dataIsList
+                    decodeString (Decode.resource "posts" postDecoder |> Decode.errorToFailure) Resource.dataIsList
                         |> Expect.err
             , test "included is not needed" <|
                 \() ->
-                    case decodeString (Decode.resource "comments" commentDecoder) Resource.commentWithoutIncluded of
+                    case decodeString (Decode.resource "comments" commentDecoder |> Decode.errorToFailure) Resource.commentWithoutIncluded of
                         Ok document ->
                             Expect.all
                                 [ JsonApi.Document.resource >> .content >> Expect.equal "Comment content"
@@ -354,7 +354,7 @@ suite =
         , describe "json api version"
             [ test "decode succeed with correct json api version" <|
                 \() ->
-                    case decodeString (Decode.resource "posts" postDecoder) DocRes.validPayloadJsonApiVersion of
+                    case decodeString (Decode.resource "posts" postDecoder |> Decode.errorToFailure) DocRes.validPayloadJsonApiVersion of
                         Ok document ->
                             Expect.all
                                 [ JsonApi.Document.resource >> .id >> Expect.equal "13608770-76dd-47e5-a1c4-4d0d9c2483ad"
@@ -373,7 +373,7 @@ suite =
                             Expect.fail (errorToString error)
             , test "decode succeed with invalid json api version" <|
                 \() ->
-                    case decodeString (Decode.resource "posts" postDecoder) DocRes.validPayloadWithBadJsonApiVersion of
+                    case decodeString (Decode.resource "posts" postDecoder |> Decode.errorToFailure) DocRes.validPayloadWithBadJsonApiVersion of
                         Ok document ->
                             Expect.all
                                 [ JsonApi.Document.resource >> .id >> Expect.equal "13608770-76dd-47e5-a1c4-4d0d9c2483ad"
@@ -394,7 +394,7 @@ suite =
         , describe "meta"
             [ test "decode resource succeed with correct meta decoder" <|
                 \() ->
-                    case decodeString (Decode.resourceWithMeta "posts" postDecoder metaDecoder) DocRes.validPayloadMeta of
+                    case decodeString (Decode.resourceWithMeta "posts" postDecoder metaDecoder |> Decode.errorToFailure) DocRes.validPayloadMeta of
                         Ok document ->
                             Expect.all
                                 [ JsonApi.Document.resource >> .id >> Expect.equal "13608770-76dd-47e5-a1c4-4d0d9c2483ad"
@@ -413,7 +413,7 @@ suite =
                             Expect.fail (errorToString error)
             , test "decode meta succeed even with no data object" <|
                 \() ->
-                    case decodeString (Decode.meta metaDecoder) DocRes.validPayloadOnlyMeta of
+                    case decodeString (Decode.meta metaDecoder |> Decode.errorToFailure) DocRes.validPayloadOnlyMeta of
                         Ok document ->
                             Expect.all
                                 [ JsonApi.Document.resource >> Expect.equal JsonApi.Internal.Document.NoData
@@ -426,11 +426,55 @@ suite =
                             Expect.fail (errorToString error)
             , test "decode failed with no meta object" <|
                 \() ->
-                    decodeString (Decode.resourceWithMeta "posts" postDecoder metaDecoder) DocRes.validPayloadNoMeta
+                    decodeString (Decode.resourceWithMeta "posts" postDecoder metaDecoder |> Decode.errorToFailure) DocRes.validPayloadNoMeta
                         |> Expect.err
             , test "decode failed with invalid meta object" <|
                 \() ->
-                    decodeString (Decode.resourceWithMeta "posts" postDecoder metaDecoder) DocRes.validPayloadBadMeta
+                    decodeString (Decode.resourceWithMeta "posts" postDecoder metaDecoder |> Decode.errorToFailure) DocRes.validPayloadBadMeta
+                        |> Expect.err
+            ]
+        , describe "errors"
+            [ test "decode failed with bad formatted errors (not list)" <|
+                \() ->
+                    decodeString (Decode.resource "posts" postDecoder) DocRes.invalidErrorPayload
+                        |> Expect.err
+            , test "decode succeed with errors have priority over data" <|
+                \() ->
+                    case decodeString (Decode.resource "posts" postDecoder) DocRes.validErrorPayloadWithData of
+                        Ok result ->
+                            case result of
+                                Err errors ->
+                                    Expect.all
+                                        [ List.map .title >> Expect.equalLists [ Just "My error", Just "My error 2" ]
+                                        , List.map .id >> Expect.equalLists [ Nothing, Just "error-id" ]
+                                        ]
+                                        errors
+
+                                Ok _ ->
+                                    Expect.fail "Has data but should be errors"
+
+                        Err error ->
+                            Expect.fail (errorToString error)
+            , test "decode succeed with errors" <|
+                \() ->
+                    case decodeString (Decode.resource "posts" postDecoder) DocRes.validErrorPayload of
+                        Ok result ->
+                            case result of
+                                Err errors ->
+                                    Expect.all
+                                        [ List.map .title >> Expect.equalLists [ Just "My error", Just "My error 2" ]
+                                        , List.map .id >> Expect.equalLists [ Nothing, Just "error-id" ]
+                                        ]
+                                        errors
+
+                                Ok _ ->
+                                    Expect.fail "Has data but should be errors"
+
+                        Err error ->
+                            Expect.fail (errorToString error)
+            , test "decode failed with errorToFailure" <|
+                \() ->
+                    decodeString (Decode.resource "posts" postDecoder |> Decode.errorToFailure) DocRes.validErrorPayload
                         |> Expect.err
             ]
         ]

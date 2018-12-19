@@ -97,6 +97,7 @@ initModel : Model
 initModel =
     { document =
         Decode.resourcesWithMeta "posts" postDecoder metaDecoder
+            |> Decode.errorToFailure
             |> (\a -> JD.decodeString a payload)
             |> Result.toMaybe
     }
