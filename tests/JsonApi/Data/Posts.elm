@@ -1,9 +1,9 @@
-module JsonApi.Data.Posts exposing (Comment, Creator, Post, badCreatorDecoder, badPostDecoder, comment1, comment2, comment3, commentDecoder, creator, creatorDecoder, fakeUser, post2, postBadCreatorDecoder, postDecoder, postDecoderWithoutCreator, postNoLink, postWithoutAttributesDecoder, postWithoutRelationshipsDecoder, posts)
+module JsonApi.Data.Posts exposing (Comment, Creator, Post, badCreatorDecoder, badPostDecoder, comment1, comment2, comment3, commentDecoder, creator, creatorDecoder, fakeUser, metaDecoder, post2, postBadCreatorDecoder, postDecoder, postDecoderWithoutCreator, postNoLink, postWithoutAttributesDecoder, postWithoutRelationshipsDecoder, posts)
 
 import Dict exposing (Dict)
-import Json.Decode exposing (Decoder, decodeString, field, map4, map6, oneOf, string, succeed)
-import JsonApi exposing (ResourceInfo)
+import Json.Decode exposing (Decoder, bool, decodeString, field, map, map4, map6, oneOf, string, succeed)
 import JsonApi.Decode as Decode
+import JsonApi.Resource exposing (Resource)
 
 
 type alias Post =
@@ -29,6 +29,11 @@ type alias Comment =
     , links : Dict String String
     , content : String
     , email : String
+    }
+
+
+type alias Meta =
+    { redirect : Bool
     }
 
 
@@ -95,40 +100,40 @@ comment3 =
     }
 
 
-commentDecoder : ResourceInfo -> Decoder Comment
+commentDecoder : Resource -> Decoder Comment
 commentDecoder resourceInfo =
     map4 Comment
-        (succeed (JsonApi.id resourceInfo))
-        (succeed (JsonApi.links resourceInfo))
+        (succeed (JsonApi.Resource.id resourceInfo))
+        (succeed (JsonApi.Resource.links resourceInfo))
         (field "content" string)
         (field "email" string)
 
 
-creatorDecoder : ResourceInfo -> Decoder Creator
+creatorDecoder : Resource -> Decoder Creator
 creatorDecoder resourceInfo =
     map4 Creator
-        (succeed (JsonApi.id resourceInfo))
-        (succeed (JsonApi.links resourceInfo))
+        (succeed (JsonApi.Resource.id resourceInfo))
+        (succeed (JsonApi.Resource.links resourceInfo))
         (field "firstname" string)
         (field "lastname" string)
 
 
-postDecoder : ResourceInfo -> Decoder Post
+postDecoder : Resource -> Decoder Post
 postDecoder resourceInfo =
     map6 Post
-        (succeed (JsonApi.id resourceInfo))
-        (succeed (JsonApi.links resourceInfo))
+        (succeed (JsonApi.Resource.id resourceInfo))
+        (succeed (JsonApi.Resource.links resourceInfo))
         (field "title" string)
         (field "content" string)
         (Decode.relationship "creator" resourceInfo creatorDecoder)
         (Decode.relationships "comments" resourceInfo commentDecoder)
 
 
-postDecoderWithoutCreator : ResourceInfo -> Decoder Post
+postDecoderWithoutCreator : Resource -> Decoder Post
 postDecoderWithoutCreator resourceInfo =
     map6 Post
-        (succeed (JsonApi.id resourceInfo))
-        (succeed (JsonApi.links resourceInfo))
+        (succeed (JsonApi.Resource.id resourceInfo))
+        (succeed (JsonApi.Resource.links resourceInfo))
         (field "title" string)
         (field "content" string)
         (oneOf [ Decode.relationship "creator" resourceInfo creatorDecoder, succeed fakeUser ])
@@ -144,54 +149,60 @@ fakeUser =
     }
 
 
-badCreatorDecoder : ResourceInfo -> Decoder Creator
+badCreatorDecoder : Resource -> Decoder Creator
 badCreatorDecoder resourceInfo =
     map4 Creator
-        (succeed (JsonApi.id resourceInfo))
-        (succeed (JsonApi.links resourceInfo))
+        (succeed (JsonApi.Resource.id resourceInfo))
+        (succeed (JsonApi.Resource.links resourceInfo))
         (field "bad" string)
         (field "lastname" string)
 
 
-postBadCreatorDecoder : ResourceInfo -> Decoder Post
+postBadCreatorDecoder : Resource -> Decoder Post
 postBadCreatorDecoder resourceInfo =
     map6 Post
-        (succeed (JsonApi.id resourceInfo))
-        (succeed (JsonApi.links resourceInfo))
+        (succeed (JsonApi.Resource.id resourceInfo))
+        (succeed (JsonApi.Resource.links resourceInfo))
         (field "title" string)
         (field "content" string)
         (Decode.relationship "creator" resourceInfo badCreatorDecoder)
         (Decode.relationships "comments" resourceInfo commentDecoder)
 
 
-postWithoutRelationshipsDecoder : ResourceInfo -> Decoder Post
+postWithoutRelationshipsDecoder : Resource -> Decoder Post
 postWithoutRelationshipsDecoder resourceInfo =
     map6 Post
-        (succeed (JsonApi.id resourceInfo))
-        (succeed (JsonApi.links resourceInfo))
+        (succeed (JsonApi.Resource.id resourceInfo))
+        (succeed (JsonApi.Resource.links resourceInfo))
         (field "title" string)
         (field "content" string)
         (succeed { id = "test", links = Dict.empty, firstname = "John", lastname = "Doe" })
         (succeed [])
 
 
-postWithoutAttributesDecoder : ResourceInfo -> Decoder Post
+postWithoutAttributesDecoder : Resource -> Decoder Post
 postWithoutAttributesDecoder resourceInfo =
     map6 Post
-        (succeed (JsonApi.id resourceInfo))
-        (succeed (JsonApi.links resourceInfo))
+        (succeed (JsonApi.Resource.id resourceInfo))
+        (succeed (JsonApi.Resource.links resourceInfo))
         (succeed "fake title")
         (succeed "fake content")
         (Decode.relationship "creator" resourceInfo creatorDecoder)
         (Decode.relationships "comments" resourceInfo commentDecoder)
 
 
-badPostDecoder : ResourceInfo -> Decoder Post
+badPostDecoder : Resource -> Decoder Post
 badPostDecoder resourceInfo =
     map6 Post
-        (succeed (JsonApi.id resourceInfo))
-        (succeed (JsonApi.links resourceInfo))
+        (succeed (JsonApi.Resource.id resourceInfo))
+        (succeed (JsonApi.Resource.links resourceInfo))
         (field "bad" string)
         (field "content" string)
         (Decode.relationship "creator" resourceInfo creatorDecoder)
         (Decode.relationships "comments" resourceInfo commentDecoder)
+
+
+metaDecoder : Decoder Meta
+metaDecoder =
+    map Meta
+        (field "redirect" bool)

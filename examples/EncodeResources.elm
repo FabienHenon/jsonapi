@@ -5,8 +5,9 @@ import Dict exposing (Dict)
 import Html exposing (Html, div, h1, li, p, sup, text, textarea, ul)
 import Html.Attributes exposing (style)
 import Json.Encode exposing (encode, object, string)
-import JsonApi exposing (ResourceInfo)
 import JsonApi.Encode as Encode
+import JsonApi.Encode.Document as Document exposing (Document)
+import JsonApi.Resource exposing (Resource)
 
 
 type alias Post =
@@ -98,44 +99,58 @@ comment3 =
     }
 
 
-postToResource : Post -> ResourceInfo
+postToResource : Post -> Resource
 postToResource post =
-    JsonApi.build "posts"
-        |> JsonApi.withId post.id
-        |> JsonApi.withLinks post.links
-        |> JsonApi.withAttributes
+    JsonApi.Resource.build "posts"
+        |> JsonApi.Resource.withId post.id
+        |> JsonApi.Resource.withLinks post.links
+        |> JsonApi.Resource.withAttributes
             [ ( "title", string post.title )
             , ( "content", string post.content )
             ]
-        |> JsonApi.withRelationship "creator" (JsonApi.relationship post.creator.id (creatorToResource post.creator))
-        |> JsonApi.withRelationship "comments" (JsonApi.relationships (List.map commentRelationship post.comments))
+        |> JsonApi.Resource.withRelationship "creator" (JsonApi.Resource.relationship post.creator.id (creatorToResource post.creator))
+        |> JsonApi.Resource.withRelationship "comments" (JsonApi.Resource.relationships (List.map commentRelationship post.comments))
 
 
-creatorToResource : Creator -> ResourceInfo
+creatorToResource : Creator -> Resource
 creatorToResource creator_ =
-    JsonApi.build "creators"
-        |> JsonApi.withId creator_.id
-        |> JsonApi.withLinks creator_.links
-        |> JsonApi.withAttributes
+    JsonApi.Resource.build "creators"
+        |> JsonApi.Resource.withId creator_.id
+        |> JsonApi.Resource.withLinks creator_.links
+        |> JsonApi.Resource.withAttributes
             [ ( "firstname", string creator_.firstname )
             , ( "lastname", string creator_.lastname )
             ]
 
 
-commentRelationship : Comment -> ( String, ResourceInfo )
+commentRelationship : Comment -> ( String, Resource )
 commentRelationship comment =
     ( comment.id, commentToResource comment )
 
 
-commentToResource : Comment -> ResourceInfo
+commentToResource : Comment -> Resource
 commentToResource comment =
-    JsonApi.build "comment"
-        |> JsonApi.withId comment.id
-        |> JsonApi.withLinks comment.links
-        |> JsonApi.withAttributes
+    JsonApi.Resource.build "comment"
+        |> JsonApi.Resource.withId comment.id
+        |> JsonApi.Resource.withLinks comment.links
+        |> JsonApi.Resource.withAttributes
             [ ( "content", string comment.content )
             , ( "email", string comment.email )
             ]
+
+
+encodeMeta : Json.Encode.Value
+encodeMeta =
+    object
+        [ ( "redirect", Json.Encode.bool True ) ]
+
+
+myDocument : Document
+myDocument =
+    Document.build
+        |> Document.withMeta encodeMeta
+        |> Document.withJsonApiVersion "2.0"
+        |> Document.withResources (List.map postToResource posts)
 
 
 type Msg
@@ -159,7 +174,7 @@ main =
 initModel : Model
 initModel =
     { posts =
-        Encode.resources (List.map postToResource posts)
+        Encode.document myDocument
             |> encode 4
     }
 
@@ -189,5 +204,3 @@ view model =
             ]
             [ text model.posts ]
         ]
-
-
