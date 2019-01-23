@@ -1,7 +1,6 @@
 module JsonApi.Decode exposing
-    ( resources, resource, resourcesWithMeta, resourceWithMeta, relationship, relationships
+    ( resources, resource, resourcesWithMeta, resourceWithMeta, relationship, relationships, meta
     , Error, errorToFailure
-    , meta
     )
 
 {-| Provides functions to decode json api document with their resources and their relationships
@@ -147,7 +146,7 @@ _Example json:_
 -}
 
 import Dict exposing (Dict)
-import Json.Decode exposing (Decoder, Value, andThen, at, decodeValue, dict, errorToString, fail, field, list, map, map3, map8, maybe, oneOf, string, succeed, value)
+import Json.Decode exposing (Decoder, Value, andThen, at, decodeValue, dict, errorToString, fail, field, list, map, map2, map3, map8, maybe, oneOf, string, succeed, value)
 import Json.Decode.Extra exposing (andMap)
 import JsonApi.Document as Document
 import JsonApi.Internal.Document as DocInternal
@@ -221,7 +220,7 @@ relationship type_ (Internal.ResourceInfo info) decoder =
         |> Dict.get type_
         |> Maybe.map .data
         |> Maybe.andThen (findRelationship info.included)
-        |> Maybe.map (decodeRelationship decoder)
+        |> Maybe.map (decodeRelationship decoder info.included)
         |> Maybe.withDefault (fail ("Relationship " ++ type_ ++ " not found"))
 
 
@@ -271,7 +270,7 @@ relationships type_ (Internal.ResourceInfo info) decoder =
         |> Dict.get type_
         |> Maybe.map .data
         |> Maybe.andThen (findRelationships info.included)
-        |> Maybe.map (decodeRelationships decoder)
+        |> Maybe.map (decodeRelationships decoder info.included)
         |> Maybe.withDefault (fail ("Relationships for " ++ type_ ++ " not found"))
 
 
@@ -356,7 +355,7 @@ resourcesWithMeta type_ decoder metaDecoder_ =
 
 resources_ : String -> (Resource -> Decoder a) -> Decoder (List a)
 resources_ type_ decoder =
-    oneOf [ field "included" includedDecoder, succeed [] ]
+    allResourcesDecoder
         |> andThen (resourcesDataDecoder type_ decoder)
 
 
@@ -445,7 +444,7 @@ resourceWithMeta type_ decoder metaDecoder_ =
 
 resource_ : String -> (Resource -> Decoder a) -> Decoder a
 resource_ type_ decoder =
-    oneOf [ field "included" includedDecoder, succeed [] ]
+    allResourcesDecoder
         |> andThen (resourceDataDecoder type_ decoder)
 
 
@@ -653,13 +652,23 @@ isGoodRelationship relationshipData (Internal.ResourceInfo { id, type_ }) =
 
 includedDecoder : Decoder (List Resource)
 includedDecoder =
-    list (resourceInfoInternalDecoder [])
+    oneOf
+        [ resourceInfoInternalDecoder [] |> map (\i -> [ i ])
+        , list (resourceInfoInternalDecoder [])
+        ]
         |> map (List.map Internal.ResourceInfo)
 
 
-decodeRelationship : (Resource -> Decoder a) -> Resource -> Decoder a
-decodeRelationship decoder (Internal.ResourceInfo info) =
-    case decodeValue (decoder (Internal.ResourceInfo info)) info.attributes of
+allResourcesDecoder : Decoder (List Resource)
+allResourcesDecoder =
+    map2 (++)
+        (oneOf [ field "included" includedDecoder, succeed [] ])
+        (oneOf [ field "data" includedDecoder, succeed [] ])
+
+
+decodeRelationship : (Resource -> Decoder a) -> List Resource -> Resource -> Decoder a
+decodeRelationship decoder included (Internal.ResourceInfo info) =
+    case decodeValue (decoder (Internal.ResourceInfo { info | included = included })) info.attributes of
         Ok res ->
             succeed res
 
@@ -667,8 +676,8 @@ decodeRelationship decoder (Internal.ResourceInfo info) =
             fail (errorToString err)
 
 
-decodeRelationships : (Resource -> Decoder a) -> List Resource -> Decoder (List a)
-decodeRelationships decoder =
+decodeRelationships : (Resource -> Decoder a) -> List Resource -> List Resource -> Decoder (List a)
+decodeRelationships decoder included =
     List.foldl
         (\(Internal.ResourceInfo info) res ->
             case res of
@@ -676,7 +685,7 @@ decodeRelationships decoder =
                     Nothing
 
                 Just list ->
-                    decodeValue (decoder (Internal.ResourceInfo info)) info.attributes
+                    decodeValue (decoder (Internal.ResourceInfo { info | included = included })) info.attributes
                         |> Result.toMaybe
                         |> Maybe.map (\a -> (::) a list)
         )
