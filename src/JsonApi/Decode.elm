@@ -587,7 +587,7 @@ resourceRelationshipsDecoder =
 resourceRelationshipDecoder : Decoder Internal.Relationship
 resourceRelationshipDecoder =
     succeed Internal.Relationship
-        |> andMap (field "data" resourceOneOrMoreRelationshipDataDecoder)
+        |> andMap (oneOf [ field "data" resourceOneOrMoreRelationshipDataDecoder, succeed Internal.NoRelationship ])
         |> andMap (oneOf [ field "links" linksDecoder, succeed Dict.empty ])
 
 
