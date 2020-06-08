@@ -1,6 +1,6 @@
 module JsonApi.Document exposing
     ( Document, NoMeta, NoData
-    , jsonApiVersion, meta, resource
+    , jsonApiVersion, meta, resource, links
     )
 
 {-| Provides a type alias and functions to handle decoded Json API documents.
@@ -13,7 +13,7 @@ module JsonApi.Document exposing
 
 # Getter functions
 
-@docs jsonApiVersion, meta, resource
+@docs jsonApiVersion, meta, resource, links
 
 -}
 
@@ -54,6 +54,9 @@ _Example of json api document:_
     },
     "jsonapi": {
         "version": "1.0"
+    },
+    "links": {
+        "self": "http://self"
     }
 }
 ```
@@ -99,3 +102,10 @@ meta (Internal.Document doc) =
 resource : Document meta data -> data
 resource (Internal.Document doc) =
     doc.data
+
+
+{-| Retrieves the root links of the document.
+-}
+links : Document meta data -> Dict String String
+links (Internal.Document doc) =
+    doc.links

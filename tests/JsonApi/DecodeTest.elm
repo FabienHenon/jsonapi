@@ -41,6 +41,30 @@ suite =
 
                         Err error ->
                             Expect.fail (errorToString error)
+            , test "decode success with null link" <|
+                \() ->
+                    case decodeString (Decode.resources "posts" postDecoder |> Decode.errorToFailure) Resources.validPayloadWithNullLink of
+                        Ok document ->
+                            Expect.all
+                                [ JsonApi.Document.resource >> List.map .id >> Expect.equalLists [ "13608770-76dd-47e5-a1c4-4d0d9c2483ad", "13608770-76dd-47e5-a1c4-4d0d9c2483ae" ]
+                                , JsonApi.Document.resource
+                                    >> List.map (.links >> Dict.toList)
+                                    >> Expect.equalLists
+                                        [ [ ( "other", "http://link-to-post/other" ), ( "self", "http://link-to-post/1" ) ]
+                                        , [ ( "self", "http://link-to-post/2" ) ]
+                                        ]
+                                , JsonApi.Document.resource >> List.map .title >> Expect.equalLists [ "First post", "Second post" ]
+                                , JsonApi.Document.resource >> List.map .content >> Expect.equalLists [ "First post content", "Second post content" ]
+                                , JsonApi.Document.resource >> List.map (.creator >> .firstname) >> Expect.equalLists [ "John", "John" ]
+                                , JsonApi.Document.resource >> List.map (.creator >> .lastname) >> Expect.equalLists [ "Doe", "Doe" ]
+                                , JsonApi.Document.resource >> List.map (.comments >> List.map .content) >> Expect.equalLists [ [ "Comment 2 content", "Comment 3 content" ], [ "Comment 1 content" ] ]
+                                , JsonApi.Document.meta >> Expect.equal JsonApi.Internal.Document.NoMeta
+                                , JsonApi.Document.jsonApiVersion >> Expect.equal "1.0"
+                                ]
+                                document
+
+                        Err error ->
+                            Expect.fail (errorToString error)
             , test "decode success with missing links" <|
                 \() ->
                     case decodeString (Decode.resources "posts" postDecoder |> Decode.errorToFailure) Resources.validPayloadWithoutLinks of
@@ -58,6 +82,36 @@ suite =
                                 , JsonApi.Document.resource >> List.map (.creator >> .lastname) >> Expect.equalLists [ "Doe" ]
                                 , JsonApi.Document.resource >> List.map (.comments >> List.map .content) >> Expect.equalLists [ [ "Comment 2 content", "Comment 3 content" ] ]
                                 , JsonApi.Document.meta >> Expect.equal JsonApi.Internal.Document.NoMeta
+                                , JsonApi.Document.jsonApiVersion >> Expect.equal "1.0"
+                                ]
+                                document
+
+                        Err error ->
+                            Expect.fail (errorToString error)
+            , test "decode success with root links" <|
+                \() ->
+                    case decodeString (Decode.resources "posts" postDecoder |> Decode.errorToFailure) Resources.validPayloadWithRootLinks of
+                        Ok document ->
+                            Expect.all
+                                [ JsonApi.Document.resource >> List.map .id >> Expect.equalLists [ "13608770-76dd-47e5-a1c4-4d0d9c2483ad", "13608770-76dd-47e5-a1c4-4d0d9c2483ae" ]
+                                , JsonApi.Document.resource
+                                    >> List.map (.links >> Dict.toList)
+                                    >> Expect.equalLists
+                                        [ [ ( "self", "http://link-to-post/1" ) ]
+                                        , [ ( "self", "http://link-to-post/2" ) ]
+                                        ]
+                                , JsonApi.Document.resource >> List.map .title >> Expect.equalLists [ "First post", "Second post" ]
+                                , JsonApi.Document.resource >> List.map .content >> Expect.equalLists [ "First post content", "Second post content" ]
+                                , JsonApi.Document.resource >> List.map (.creator >> .firstname) >> Expect.equalLists [ "John", "John" ]
+                                , JsonApi.Document.resource >> List.map (.creator >> .lastname) >> Expect.equalLists [ "Doe", "Doe" ]
+                                , JsonApi.Document.resource >> List.map (.comments >> List.map .content) >> Expect.equalLists [ [ "Comment 2 content", "Comment 3 content" ], [ "Comment 1 content" ] ]
+                                , JsonApi.Document.meta >> Expect.equal JsonApi.Internal.Document.NoMeta
+                                , JsonApi.Document.links
+                                    >> Dict.toList
+                                    >> Expect.equalLists
+                                        [ ( "other", "http://root/2" )
+                                        , ( "self", "http://root/1" )
+                                        ]
                                 , JsonApi.Document.jsonApiVersion >> Expect.equal "1.0"
                                 ]
                                 document
@@ -218,6 +272,25 @@ suite =
 
                         Err error ->
                             Expect.fail (errorToString error)
+            , test "decode success with null link" <|
+                \() ->
+                    case decodeString (Decode.resource "posts" postDecoder |> Decode.errorToFailure) Resource.validPayloadWithNullLink of
+                        Ok document ->
+                            Expect.all
+                                [ JsonApi.Document.resource >> .id >> Expect.equal "13608770-76dd-47e5-a1c4-4d0d9c2483ad"
+                                , JsonApi.Document.resource >> .links >> Dict.toList >> Expect.equalLists [ ( "other", "http://link-to-post/other" ), ( "self", "http://link-to-post/1" ) ]
+                                , JsonApi.Document.resource >> .title >> Expect.equal "First post"
+                                , JsonApi.Document.resource >> .content >> Expect.equal "First post content"
+                                , JsonApi.Document.resource >> .creator >> .firstname >> Expect.equal "John"
+                                , JsonApi.Document.resource >> .creator >> .lastname >> Expect.equal "Doe"
+                                , JsonApi.Document.resource >> .comments >> List.map .content >> Expect.equalLists [ "Comment 2 content", "Comment 3 content" ]
+                                , JsonApi.Document.meta >> Expect.equal JsonApi.Internal.Document.NoMeta
+                                , JsonApi.Document.jsonApiVersion >> Expect.equal "1.0"
+                                ]
+                                document
+
+                        Err error ->
+                            Expect.fail (errorToString error)
             , test "decode success with missing links" <|
                 \() ->
                     case decodeString (Decode.resource "posts" postDecoder |> Decode.errorToFailure) Resource.validPayloadWithoutLinks of
@@ -231,6 +304,31 @@ suite =
                                 , JsonApi.Document.resource >> .creator >> .lastname >> Expect.equal "Doe"
                                 , JsonApi.Document.resource >> .comments >> List.map .content >> Expect.equalLists [ "Comment 2 content", "Comment 3 content" ]
                                 , JsonApi.Document.meta >> Expect.equal JsonApi.Internal.Document.NoMeta
+                                , JsonApi.Document.jsonApiVersion >> Expect.equal "1.0"
+                                ]
+                                document
+
+                        Err error ->
+                            Expect.fail (errorToString error)
+            , test "decode success with root links" <|
+                \() ->
+                    case decodeString (Decode.resource "posts" postDecoder |> Decode.errorToFailure) Resource.validPayloadWithRootLinks of
+                        Ok document ->
+                            Expect.all
+                                [ JsonApi.Document.resource >> .id >> Expect.equal "13608770-76dd-47e5-a1c4-4d0d9c2483ad"
+                                , JsonApi.Document.resource >> .links >> Dict.toList >> Expect.equalLists [ ( "self", "http://link-to-post/1" ) ]
+                                , JsonApi.Document.resource >> .title >> Expect.equal "First post"
+                                , JsonApi.Document.resource >> .content >> Expect.equal "First post content"
+                                , JsonApi.Document.resource >> .creator >> .firstname >> Expect.equal "John"
+                                , JsonApi.Document.resource >> .creator >> .lastname >> Expect.equal "Doe"
+                                , JsonApi.Document.resource >> .comments >> List.map .content >> Expect.equalLists [ "Comment 2 content", "Comment 3 content" ]
+                                , JsonApi.Document.meta >> Expect.equal JsonApi.Internal.Document.NoMeta
+                                , JsonApi.Document.links
+                                    >> Dict.toList
+                                    >> Expect.equalLists
+                                        [ ( "other", "http://root/2" )
+                                        , ( "self", "http://root/1" )
+                                        ]
                                 , JsonApi.Document.jsonApiVersion >> Expect.equal "1.0"
                                 ]
                                 document

@@ -7,6 +7,7 @@ module JsonApi.Internal.Document exposing
     , NoMeta(..)
     )
 
+import Dict exposing (Dict)
 import Json.Encode exposing (Value)
 import JsonApi.Internal.ResourceInfo as Internal
 
@@ -27,6 +28,7 @@ type alias DocumentInternal meta data =
     { jsonApiVersion : String
     , meta : meta
     , data : data
+    , links : Dict String String
     }
 
 
@@ -38,4 +40,5 @@ type alias DocumentEncodeInternal =
     { jsonApiVersion : String
     , meta : Maybe Value
     , data : Maybe Internal.OneOrManyRelationshipsInternal
+    , links : Dict String String
     }

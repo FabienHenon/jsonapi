@@ -146,7 +146,7 @@ _Example json:_
 -}
 
 import Dict exposing (Dict)
-import Json.Decode exposing (Decoder, Value, andThen, at, decodeValue, dict, errorToString, fail, field, list, map, map2, map3, map8, maybe, oneOf, string, succeed, value)
+import Json.Decode exposing (Decoder, Value, andThen, at, decodeValue, dict, errorToString, fail, field, keyValuePairs, list, map, map2, map3, map4, map8, maybe, oneOf, string, succeed, value)
 import Json.Decode.Extra exposing (andMap)
 import JsonApi.Document as Document
 import JsonApi.Internal.Document as DocInternal
@@ -301,10 +301,11 @@ Here is an example of resource `Decoder`:
 -}
 resources : String -> (Resource -> Decoder a) -> Decoder (Result (List Error) (Document.Document Document.NoMeta (List a)))
 resources type_ decoder =
-    map3 DocInternal.DocumentInternal
+    map4 DocInternal.DocumentInternal
         jsonApiVersionDecoder
         (succeed DocInternal.NoMeta)
         (resources_ type_ decoder)
+        linksDecoder
         |> map DocInternal.Document
         |> checkForErrors
 
@@ -345,10 +346,11 @@ Here is an example of resource `Decoder` with meta:
 -}
 resourcesWithMeta : String -> (Resource -> Decoder a) -> Decoder meta -> Decoder (Result (List Error) (Document.Document meta (List a)))
 resourcesWithMeta type_ decoder metaDecoder_ =
-    map3 DocInternal.DocumentInternal
+    map4 DocInternal.DocumentInternal
         jsonApiVersionDecoder
         (metaDecoder metaDecoder_)
         (resources_ type_ decoder)
+        linksDecoder
         |> map DocInternal.Document
         |> checkForErrors
 
@@ -388,10 +390,11 @@ Here is an example of resource `Decoder`:
 -}
 resource : String -> (Resource -> Decoder a) -> Decoder (Result (List Error) (Document.Document Document.NoMeta a))
 resource type_ decoder =
-    map3 DocInternal.DocumentInternal
+    map4 DocInternal.DocumentInternal
         jsonApiVersionDecoder
         (succeed DocInternal.NoMeta)
         (resource_ type_ decoder)
+        linksDecoder
         |> map DocInternal.Document
         |> checkForErrors
 
@@ -434,10 +437,11 @@ Here is an example of resource `Decoder` with meta:
 -}
 resourceWithMeta : String -> (Resource -> Decoder a) -> Decoder meta -> Decoder (Result (List Error) (Document.Document meta a))
 resourceWithMeta type_ decoder metaDecoder_ =
-    map3 DocInternal.DocumentInternal
+    map4 DocInternal.DocumentInternal
         jsonApiVersionDecoder
         (metaDecoder metaDecoder_)
         (resource_ type_ decoder)
+        linksDecoder
         |> map DocInternal.Document
         |> checkForErrors
 
@@ -473,10 +477,11 @@ Here is an example of document `Decoder` with only meta:
 -}
 meta : Decoder meta -> Decoder (Result (List Error) (Document.Document meta Document.NoData))
 meta metaDecoder_ =
-    map3 DocInternal.DocumentInternal
+    map4 DocInternal.DocumentInternal
         jsonApiVersionDecoder
         (metaDecoder metaDecoder_)
         (succeed DocInternal.NoData)
+        linksDecoder
         |> map DocInternal.Document
         |> checkForErrors
 
@@ -519,7 +524,7 @@ errorDecoder : Decoder Error
 errorDecoder =
     map8 Error
         (maybe <| field "id" string)
-        (maybe <| field "links" (dict string))
+        (maybe <| field "links" linksNullDecoder)
         (maybe <| field "status" string)
         (maybe <| field "code" string)
         (maybe <| field "title" string)
@@ -568,7 +573,7 @@ resourceInfoInternalDecoder : List Resource -> Decoder Internal.ResourceInfoInte
 resourceInfoInternalDecoder included =
     succeed (Internal.ResourceInfoInternal included)
         |> andMap (field "id" string |> map Just)
-        |> andMap (oneOf [ field "links" linksDecoder, succeed Dict.empty ])
+        |> andMap linksDecoder
         |> andMap (field "type" string)
         |> andMap (oneOf [ field "relationships" resourceRelationshipsDecoder, succeed Dict.empty ])
         |> andMap (field "attributes" value)
@@ -576,7 +581,24 @@ resourceInfoInternalDecoder included =
 
 linksDecoder : Decoder (Dict String String)
 linksDecoder =
-    dict string
+    oneOf
+        [ field "links" linksNullDecoder
+        , succeed Dict.empty
+        ]
+
+
+linksNullDecoder : Decoder (Dict String String)
+linksNullDecoder =
+    keyValuePairs (maybe string)
+        |> map
+            (List.filterMap
+                (\( k, v ) ->
+                    ( k, v )
+                        |> Tuple.second
+                        |> Maybe.map (\nv -> ( k, nv ))
+                )
+                >> Dict.fromList
+            )
 
 
 resourceRelationshipsDecoder : Decoder (Dict String Internal.Relationship)
@@ -588,7 +610,7 @@ resourceRelationshipDecoder : Decoder Internal.Relationship
 resourceRelationshipDecoder =
     succeed Internal.Relationship
         |> andMap (oneOf [ field "data" resourceOneOrMoreRelationshipDataDecoder, succeed Internal.NoRelationship ])
-        |> andMap (oneOf [ field "links" linksDecoder, succeed Dict.empty ])
+        |> andMap linksDecoder
 
 
 resourceOneOrMoreRelationshipDataDecoder : Decoder Internal.OneOrMoreRelationshipData

@@ -11,7 +11,7 @@ encode it to a json api string with `Json.Encode.encode`.
 -}
 
 import Dict exposing (Dict)
-import Json.Encode exposing (Value, list, null, object, string)
+import Json.Encode exposing (Value, dict, list, null, object, string)
 import JsonApi.Encode.Document exposing (Document)
 import JsonApi.Internal.Document as DocInternal
 import JsonApi.Internal.ResourceInfo as Internal
@@ -152,6 +152,7 @@ encodeBasePayload doc res =
     object
         (encodeOptionalResource res
             ++ encodeOptionalMeta doc
+            ++ encodeOptionalRootLinks doc
             ++ [ ( "jsonapi", encodeJsonApi doc ) ]
         )
 
@@ -164,6 +165,15 @@ encodeJsonApi doc =
 encodeOptionalMeta : DocInternal.DocumentEncodeInternal -> List ( String, Value )
 encodeOptionalMeta =
     .meta >> Maybe.map (\meta -> [ ( "meta", meta ) ]) >> Maybe.withDefault []
+
+
+encodeOptionalRootLinks : DocInternal.DocumentEncodeInternal -> List ( String, Value )
+encodeOptionalRootLinks doc =
+    if Dict.isEmpty doc.links then
+        []
+
+    else
+        [ ( "links", dict identity string doc.links ) ]
 
 
 encodeOptionalResource : Maybe ( List Resource, Value ) -> List ( String, Value )

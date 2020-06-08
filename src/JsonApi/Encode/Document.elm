@@ -1,8 +1,8 @@
 module JsonApi.Encode.Document exposing
     ( Document
     , build
-    , jsonApiVersion, meta, resource, resources
-    , withJsonApiVersion, withMeta, withResource, withResources
+    , jsonApiVersion, meta, resource, resources, links
+    , withJsonApiVersion, withMeta, withResource, withResources, withLinks
     )
 
 {-| Provides a type alias and functions to create a new Json API document to be
@@ -21,15 +21,16 @@ encoded via `JsonApi.Encode.document`.
 
 # Getter functions
 
-@docs jsonApiVersion, meta, resource, resources
+@docs jsonApiVersion, meta, resource, resources, links
 
 
 # Setter functions
 
-@docs withJsonApiVersion, withMeta, withResource, withResources
+@docs withJsonApiVersion, withMeta, withResource, withResources, withLinks
 
 -}
 
+import Dict exposing (Dict)
 import Json.Encode exposing (Value)
 import JsonApi.Internal.Document as Internal
 import JsonApi.Internal.ResourceInfo as ResInternal
@@ -82,6 +83,7 @@ build =
         { jsonApiVersion = "1.0"
         , meta = Nothing
         , data = Nothing
+        , links = Dict.empty
         }
 
 
@@ -117,6 +119,13 @@ meta (Internal.DocumentEncode doc) =
     doc.meta
 
 
+{-| Retrieves the `links` object of the `Document`.
+-}
+links : Document -> Dict String String
+links (Internal.DocumentEncode doc) =
+    doc.links
+
+
 {-| Sets the `meta` value of the `Document`
 
     myDocument : Document
@@ -128,6 +137,19 @@ meta (Internal.DocumentEncode doc) =
 withMeta : Value -> Document -> Document
 withMeta meta_ (Internal.DocumentEncode doc) =
     Internal.DocumentEncode { doc | meta = Just meta_ }
+
+
+{-| Sets the `links` value of the `Document`
+
+    myDocument : Document
+    myDocument =
+        build
+            |> withLinks (Dict.fromList [ ( "self", "http://self" ) ])
+
+-}
+withLinks : Dict String String -> Document -> Document
+withLinks links_ (Internal.DocumentEncode doc) =
+    Internal.DocumentEncode { doc | links = links_ }
 
 
 {-| Retrieves the resource (in the `data` object) of the `Document`.
