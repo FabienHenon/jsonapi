@@ -4,6 +4,7 @@ module JsonApi.Resource exposing
     , id, links
     , withId, withLinks, withAttributes, withRelationship
     , relationship, relationships
+    , resType
     )
 
 {-| JsonApi.Resource exposes the `Resource` type and functions to get and set information
@@ -44,7 +45,7 @@ import JsonApi.Internal.ResourceInfo as Internal
 {-| The `Resource` represents a resource. It is passed to your resource decoders, but you can also use it to encode resources to json api, via a `Document`.
 It contains useful information for decoding and encoding your resource: resource `id`, `links`, `attributes`, `relationships`, ...
 
-_Example of json api resource:_
+\_Example of json api <resource:_>
 
 ```json
 {
@@ -105,6 +106,16 @@ From the json example above, `id` will return `13608770-76dd-47e5-a1c4-4d0d9c248
 id : Resource -> String
 id (Internal.ResourceInfo res) =
     res.id |> Maybe.withDefault ""
+
+
+{-| Returns the `type` of your resource.
+
+From the json example above, `type_` will return `users`
+
+-}
+resType : Resource -> String
+resType (Internal.ResourceInfo { type_ }) =
+    type_
 
 
 {-| Returns the `links` of your resource.
