@@ -1,10 +1,9 @@
 module JsonApi.Resource exposing
     ( Resource, OneOrManyRelationships
     , build, fromResource
-    , id, links
+    , id, links, resType
     , withId, withLinks, withAttributes, withRelationship
     , relationship, relationships
-    , resType
     )
 
 {-| JsonApi.Resource exposes the `Resource` type and functions to get and set information
@@ -23,7 +22,7 @@ for your resources.
 
 # Getter functions
 
-@docs id, links
+@docs id, links, resType
 
 
 # Setter functions
