@@ -4,7 +4,7 @@ import Dict exposing (Dict)
 import Expect exposing (Expectation)
 import Json.Encode exposing (encode, object, string)
 import JsonApi.Internal.ResourceInfo as Internal
-import JsonApi.Resource exposing (Resource, build, id, links, relationship, relationships, withAttributes, withId, withLinks, withRelationship)
+import JsonApi.Resource exposing (Resource, build, id, links, relationship, relationships, resType, withAttributes, withId, withLinks, withRelationship)
 import Test exposing (..)
 
 
@@ -16,7 +16,7 @@ suite =
                 build "test"
                     |> Expect.all
                         [ id >> Expect.equal ""
-                        , getInternal .type_ >> Expect.equal "test"
+                        , resType >> Expect.equal "test"
                         , links >> Dict.toList >> Expect.equalLists []
                         , getInternal .attributes >> encode 0 >> Expect.equal (object [] |> encode 0)
                         , getInternal .relationships >> Dict.toList >> Expect.equalLists []
@@ -29,7 +29,7 @@ suite =
                     |> JsonApi.Resource.fromResource "new-test"
                     |> Expect.all
                         [ id >> Expect.equal "test-id"
-                        , getInternal .type_ >> Expect.equal "new-test"
+                        , resType >> Expect.equal "new-test"
                         ]
         , test "resource info with id has an id" <|
             \() ->
@@ -37,7 +37,7 @@ suite =
                     |> withId "test-id"
                     |> Expect.all
                         [ id >> Expect.equal "test-id"
-                        , getInternal .type_ >> Expect.equal "test"
+                        , resType >> Expect.equal "test"
                         , links >> Dict.toList >> Expect.equalLists []
                         , getInternal .attributes >> encode 0 >> Expect.equal (object [] |> encode 0)
                         , getInternal .relationships >> Dict.toList >> Expect.equalLists []
@@ -49,7 +49,7 @@ suite =
                     |> withLinks (Dict.fromList [ ( "self", "http://link-1" ) ])
                     |> Expect.all
                         [ id >> Expect.equal ""
-                        , getInternal .type_ >> Expect.equal "test"
+                        , resType >> Expect.equal "test"
                         , links >> Dict.toList >> Expect.equalLists [ ( "self", "http://link-1" ) ]
                         , getInternal .attributes >> encode 0 >> Expect.equal (object [] |> encode 0)
                         , getInternal .relationships >> Dict.toList >> Expect.equalLists []
@@ -61,7 +61,7 @@ suite =
                     |> withAttributes [ ( "attr-1", string "1" ), ( "attr-2", string "2" ) ]
                     |> Expect.all
                         [ id >> Expect.equal ""
-                        , getInternal .type_ >> Expect.equal "test"
+                        , resType >> Expect.equal "test"
                         , links >> Dict.toList >> Expect.equalLists []
                         , getInternal .attributes >> encode 0 >> Expect.equal (object [ ( "attr-1", string "1" ), ( "attr-2", string "2" ) ] |> encode 0)
                         , getInternal .relationships >> Dict.toList >> Expect.equalLists []
@@ -73,7 +73,7 @@ suite =
                     |> withRelationship "test-rel" (relationship "rel-id" (build "rel-type"))
                     |> Expect.all
                         [ id >> Expect.equal ""
-                        , getInternal .type_ >> Expect.equal "test"
+                        , resType >> Expect.equal "test"
                         , links >> Dict.toList >> Expect.equalLists []
                         , getInternal .attributes >> encode 0 >> Expect.equal (object [] |> encode 0)
                         , getInternal .relationships
@@ -95,7 +95,7 @@ suite =
                     |> withRelationship "test-rel" (relationships [ ( "rel-id-1", build "rel-type-1" ), ( "rel-id-2", build "rel-type-2" ) ])
                     |> Expect.all
                         [ id >> Expect.equal ""
-                        , getInternal .type_ >> Expect.equal "test"
+                        , resType >> Expect.equal "test"
                         , links >> Dict.toList >> Expect.equalLists []
                         , getInternal .attributes >> encode 0 >> Expect.equal (object [] |> encode 0)
                         , getInternal .relationships
@@ -124,7 +124,7 @@ suite =
                         )
                     |> Expect.all
                         [ id >> Expect.equal ""
-                        , getInternal .type_ >> Expect.equal "test"
+                        , resType >> Expect.equal "test"
                         , links >> Dict.toList >> Expect.equalLists []
                         , getInternal .attributes >> encode 0 >> Expect.equal (object [] |> encode 0)
                         , getInternal .relationships
