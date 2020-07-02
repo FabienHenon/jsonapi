@@ -1,7 +1,7 @@
 module JsonApi.Resource exposing
-    ( Resource, OneOrManyRelationships
+    ( Resource, OneOrManyRelationships, OneOrMoreRelationshipData(..), RelationshipData, RelationshipDesc
     , build, fromResource
-    , id, links, resType
+    , id, links, resType, getRelationshipsDesc
     , withId, withLinks, withAttributes, withRelationship
     , relationship, relationships
     )
@@ -12,7 +12,7 @@ for your resources.
 
 # Type
 
-@docs Resource, OneOrManyRelationships
+@docs Resource, OneOrManyRelationships, OneOrMoreRelationshipData, RelationshipData, RelationshipDesc
 
 
 # New resource
@@ -22,7 +22,7 @@ for your resources.
 
 # Getter functions
 
-@docs id, links, resType
+@docs id, links, resType, getRelationshipsDesc
 
 
 # Setter functions
@@ -88,13 +88,65 @@ type alias Resource =
     Internal.ResourceInfo
 
 
-{-| This type is used to represent either or or many relationships in your `Resource` object.
+{-| This type is used to represent either one or many relationships in your `Resource` object.
 
 See `withRelationship` function for more information
 
 -}
 type alias OneOrManyRelationships =
     Internal.OneOrManyRelationships
+
+
+{-| Relationship's data object. It's a variant type because in a relationship
+the `data` field can either: be null, have one relationship, have many relationships.
+
+_See `getRelationshipsDesc` for more information_
+
+-}
+type OneOrMoreRelationshipData
+    = NoRelationship
+    | One RelationshipData
+    | Many (List RelationshipData)
+
+
+{-| Description of the `data` object in a `relationship` object.
+Contains the `id` of the relationship and it's `type`
+
+_See `getRelationshipsDesc` for more information_
+
+-}
+type alias RelationshipData =
+    { id : String
+    , type_ : String
+    }
+
+
+{-| The description of a relationship in the `relationships` field of the jsonapi object.
+
+For instance (in jsonapi):
+
+    "relationships": {
+        "creator": {
+            "data": {
+                "type": "creators",
+                "id": "22208770-76dd-47e5-a1c4-4d0d9c2483ad"
+            },
+            "links": {
+                "related": "http://link-to-creator/1"
+            }
+        }
+    }
+
+This type contains the links defined in the relationship and the `data` object of
+the relationship
+
+_See `getRelationshipsDesc` for more information_
+
+-}
+type alias RelationshipDesc =
+    { data : OneOrMoreRelationshipData
+    , links : Dict String String
+    }
 
 
 {-| Returns the `id` of your resource.
@@ -129,6 +181,103 @@ From the json example above, `links` will return a `Dict` with this value:
 links : Resource -> Dict String String
 links (Internal.ResourceInfo res) =
     res.links
+
+
+{-| Returns the relationships description of your resource.
+
+**This is not a way to decode a relationship, only a quick way to get the relationship ids and types**
+
+    type alias Post =
+        { id : String
+        , links : Dict String String
+        , title : String
+        , content : String
+        , relationships : Dict String JsonApi.Resource.RelationshipDesc
+        }
+
+    decoder : Resource -> Decoder Post
+    decoder resourceInfo =
+        map5 Post
+            (succeed (JsonApi.Resource.id resourceInfo))
+            (succeed (JsonApi.Resource.links resourceInfo))
+            (field "title" string)
+            (field "content" string)
+            (succeed (JsonApi.Resource.getRelationshipsDesc resourceInfo))
+
+Say the relationships for this post are:
+
+    "relationships": {
+        "creator": {
+            "data": {
+                "type": "creators",
+                "id": "22208770-76dd-47e5-a1c4-4d0d9c2483ad"
+            },
+            "links": {
+                "related": "http://link-to-creator/1"
+            }
+        },
+        "comments": {
+            "links": {},
+            "data": [
+                {
+                    "type": "comment",
+                    "id": "22208770-76dd-47e5-a1c4-4d0d9c2483ab"
+                },
+                {
+                    "type": "comment",
+                    "id": "cb0759b0-03ab-4291-b067-84a9017fea6f"
+                }
+            ]
+        }
+    }
+
+Then you will get these information:
+
+    Dict.get "creator" post.relationships
+
+    Just
+        { links = [ ( "related", "http://link-to-creator/1" ) ]
+        , data =
+            JsonApi.Resource.One
+                { id = "22208770-76dd-47e5-a1c4-4d0d9c2483ad"
+                , type_ = "creators"
+                }
+        }
+
+    Dict.get "comments" post.relationships
+
+    Just
+        { links = []
+        , data =
+            JsonApi.Resource.Many
+                [ { id = "22208770-76dd-47e5-a1c4-4d0d9c2483ab"
+                  , type_ = "comment"
+                  }
+                , { id = "cb0759b0-03ab-4291-b067-84a9017fea6f"
+                  , type_ = "comment"
+                  }
+                ]
+        }
+
+-}
+getRelationshipsDesc : Resource -> Dict String RelationshipDesc
+getRelationshipsDesc (Internal.ResourceInfo res) =
+    res.relationships
+        |> Dict.map
+            (\k v ->
+                { links = v.links
+                , data =
+                    case v.data of
+                        Internal.NoRelationship ->
+                            NoRelationship
+
+                        Internal.One e ->
+                            One e
+
+                        Internal.Many e ->
+                            Many e
+                }
+            )
 
 
 {-| Builds a new `Resource` with the specified type name

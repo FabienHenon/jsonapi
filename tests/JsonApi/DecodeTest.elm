@@ -10,6 +10,7 @@ import JsonApi.Data.ResourcesPayloads as Resources
 import JsonApi.Decode as Decode
 import JsonApi.Document
 import JsonApi.Internal.Document
+import JsonApi.Resource
 import Test exposing (..)
 
 
@@ -251,6 +252,69 @@ suite =
                 \() ->
                     decodeString (Decode.resources "posts" postDecoder |> Decode.errorToFailure) Resources.dataIsObject
                         |> Expect.err
+            , test "decode success with relationships desc" <|
+                \() ->
+                    case decodeString (Decode.resources "posts" postDecoderWithRelationshipsDesc |> Decode.errorToFailure) Resources.validPayload of
+                        Ok document ->
+                            Expect.all
+                                [ JsonApi.Document.resource >> List.map .id >> Expect.equalLists [ "13608770-76dd-47e5-a1c4-4d0d9c2483ad", "13608770-76dd-47e5-a1c4-4d0d9c2483ae" ]
+                                , JsonApi.Document.resource
+                                    >> List.map (.links >> Dict.toList)
+                                    >> Expect.equalLists
+                                        [ [ ( "self", "http://link-to-post/1" ) ]
+                                        , [ ( "self", "http://link-to-post/2" ) ]
+                                        ]
+                                , JsonApi.Document.resource >> List.map .title >> Expect.equalLists [ "First post", "Second post" ]
+                                , JsonApi.Document.resource >> List.map .content >> Expect.equalLists [ "First post content", "Second post content" ]
+                                , JsonApi.Document.meta >> Expect.equal JsonApi.Internal.Document.NoMeta
+                                , JsonApi.Document.jsonApiVersion >> Expect.equal "1.0"
+                                , JsonApi.Document.resource
+                                    >> List.map
+                                        (.relationships
+                                            >> Dict.toList
+                                            >> List.map (Tuple.mapSecond (.links >> Dict.toList))
+                                        )
+                                    >> Expect.equalLists
+                                        [ [ ( "comments", [] )
+                                          , ( "creator", [ ( "related", "http://link-to-creator/1" ) ] )
+                                          ]
+                                        , [ ( "comments", [] )
+                                          , ( "creator", [ ( "related", "http://lnk-to-creator/1" ) ] )
+                                          ]
+                                        ]
+                                , JsonApi.Document.resource
+                                    >> List.map
+                                        (.relationships
+                                            >> Dict.toList
+                                            >> List.map (Tuple.mapSecond (.data >> relationshipToList >> List.map .id))
+                                        )
+                                    >> Expect.equalLists
+                                        [ [ ( "comments", [ "22208770-76dd-47e5-a1c4-4d0d9c2483ab", "cb0759b0-03ab-4291-b067-84a9017fea6f" ] )
+                                          , ( "creator", [ "22208770-76dd-47e5-a1c4-4d0d9c2483ad" ] )
+                                          ]
+                                        , [ ( "comments", [ "22208770-76dd-47e5-a1c4-4d0d9c2483ac" ] )
+                                          , ( "creator", [ "22208770-76dd-47e5-a1c4-4d0d9c2483ad" ] )
+                                          ]
+                                        ]
+                                , JsonApi.Document.resource
+                                    >> List.map
+                                        (.relationships
+                                            >> Dict.toList
+                                            >> List.map (Tuple.mapSecond (.data >> relationshipToList >> List.map .type_))
+                                        )
+                                    >> Expect.equalLists
+                                        [ [ ( "comments", [ "comment", "comment" ] )
+                                          , ( "creator", [ "creators" ] )
+                                          ]
+                                        , [ ( "comments", [ "comment" ] )
+                                          , ( "creator", [ "creators" ] )
+                                          ]
+                                        ]
+                                ]
+                                document
+
+                        Err error ->
+                            Expect.fail (errorToString error)
             ]
         , describe "resource"
             [ test "decode success" <|
@@ -448,6 +512,46 @@ suite =
 
                         Err error ->
                             Expect.fail (errorToString error)
+            , test "decode success with relationships desc" <|
+                \() ->
+                    case decodeString (Decode.resource "posts" postDecoderWithRelationshipsDesc |> Decode.errorToFailure) Resource.validPayload of
+                        Ok document ->
+                            Expect.all
+                                [ JsonApi.Document.resource >> .id >> Expect.equal "13608770-76dd-47e5-a1c4-4d0d9c2483ad"
+                                , JsonApi.Document.resource >> .links >> Dict.toList >> Expect.equalLists [ ( "self", "http://link-to-post/1" ) ]
+                                , JsonApi.Document.resource >> .title >> Expect.equal "First post"
+                                , JsonApi.Document.resource >> .content >> Expect.equal "First post content"
+                                , JsonApi.Document.meta >> Expect.equal JsonApi.Internal.Document.NoMeta
+                                , JsonApi.Document.jsonApiVersion >> Expect.equal "1.0"
+                                , JsonApi.Document.resource
+                                    >> .relationships
+                                    >> Dict.toList
+                                    >> List.map (Tuple.mapSecond (.links >> Dict.toList))
+                                    >> Expect.equalLists
+                                        [ ( "comments", [] )
+                                        , ( "creator", [ ( "related", "http://link-to-creator/1" ) ] )
+                                        ]
+                                , JsonApi.Document.resource
+                                    >> .relationships
+                                    >> Dict.toList
+                                    >> List.map (Tuple.mapSecond (.data >> relationshipToList >> List.map .id))
+                                    >> Expect.equalLists
+                                        [ ( "comments", [ "22208770-76dd-47e5-a1c4-4d0d9c2483ab", "cb0759b0-03ab-4291-b067-84a9017fea6f" ] )
+                                        , ( "creator", [ "22208770-76dd-47e5-a1c4-4d0d9c2483ad" ] )
+                                        ]
+                                , JsonApi.Document.resource
+                                    >> .relationships
+                                    >> Dict.toList
+                                    >> List.map (Tuple.mapSecond (.data >> relationshipToList >> List.map .type_))
+                                    >> Expect.equalLists
+                                        [ ( "comments", [ "comment", "comment" ] )
+                                        , ( "creator", [ "creators" ] )
+                                        ]
+                                ]
+                                document
+
+                        Err error ->
+                            Expect.fail (errorToString error)
             ]
         , describe "json api version"
             [ test "decode succeed with correct json api version" <|
@@ -576,3 +680,16 @@ suite =
                         |> Expect.err
             ]
         ]
+
+
+relationshipToList : JsonApi.Resource.OneOrMoreRelationshipData -> List JsonApi.Resource.RelationshipData
+relationshipToList oneOrMore =
+    case oneOrMore of
+        JsonApi.Resource.NoRelationship ->
+            []
+
+        JsonApi.Resource.One r ->
+            [ r ]
+
+        JsonApi.Resource.Many r ->
+            r

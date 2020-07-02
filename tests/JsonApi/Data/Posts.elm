@@ -1,7 +1,7 @@
-module JsonApi.Data.Posts exposing (Comment, Creator, Post, badCreatorDecoder, badPostDecoder, comment1, comment2, comment3, commentDecoder, creator, creatorDecoder, fakeUser, metaDecoder, post2, postBadCreatorDecoder, postDecoder, postDecoderWithoutCreator, postNoLink, postWithoutAttributesDecoder, postWithoutRelationshipsDecoder, posts)
+module JsonApi.Data.Posts exposing (Comment, Creator, Post, PostWithRelationshipDesc, badCreatorDecoder, badPostDecoder, comment1, comment2, comment3, commentDecoder, creator, creatorDecoder, fakeUser, metaDecoder, post2, postBadCreatorDecoder, postDecoder, postDecoderWithRelationshipsDesc, postDecoderWithoutCreator, postNoLink, postWithoutAttributesDecoder, postWithoutRelationshipsDecoder, posts)
 
 import Dict exposing (Dict)
-import Json.Decode exposing (Decoder, bool, decodeString, field, map, map4, map6, oneOf, string, succeed)
+import Json.Decode exposing (Decoder, bool, decodeString, field, map, map4, map5, map6, oneOf, string, succeed)
 import JsonApi.Decode as Decode
 import JsonApi.Resource exposing (Resource)
 
@@ -34,6 +34,15 @@ type alias Comment =
 
 type alias Meta =
     { redirect : Bool
+    }
+
+
+type alias PostWithRelationshipDesc =
+    { id : String
+    , links : Dict String String
+    , title : String
+    , content : String
+    , relationships : Dict String JsonApi.Resource.RelationshipDesc
     }
 
 
@@ -138,6 +147,16 @@ postDecoderWithoutCreator resourceInfo =
         (field "content" string)
         (oneOf [ Decode.relationship "creator" resourceInfo creatorDecoder, succeed fakeUser ])
         (Decode.relationships "comments" resourceInfo commentDecoder)
+
+
+postDecoderWithRelationshipsDesc : Resource -> Decoder PostWithRelationshipDesc
+postDecoderWithRelationshipsDesc resourceInfo =
+    map5 PostWithRelationshipDesc
+        (succeed (JsonApi.Resource.id resourceInfo))
+        (succeed (JsonApi.Resource.links resourceInfo))
+        (field "title" string)
+        (field "content" string)
+        (succeed (JsonApi.Resource.getRelationshipsDesc resourceInfo))
 
 
 fakeUser : Creator
