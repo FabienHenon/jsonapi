@@ -254,7 +254,7 @@ suite =
                         |> Expect.err
             , test "decode success with relationships desc" <|
                 \() ->
-                    case decodeString (Decode.resources "posts" postDecoderWithRelationshipsDesc |> Decode.errorToFailure) Resources.validPayload of
+                    case decodeString (Decode.resources "posts" postDecoderWithRelationshipsDesc |> Decode.errorToFailure) Resources.validPayloadNoIncluded of
                         Ok document ->
                             Expect.all
                                 [ JsonApi.Document.resource >> List.map .id >> Expect.equalLists [ "13608770-76dd-47e5-a1c4-4d0d9c2483ad", "13608770-76dd-47e5-a1c4-4d0d9c2483ae" ]
@@ -514,7 +514,7 @@ suite =
                             Expect.fail (errorToString error)
             , test "decode success with relationships desc" <|
                 \() ->
-                    case decodeString (Decode.resource "posts" postDecoderWithRelationshipsDesc |> Decode.errorToFailure) Resource.validPayload of
+                    case decodeString (Decode.resource "posts" postDecoderWithRelationshipsDesc |> Decode.errorToFailure) Resource.validPayloadNoIncluded of
                         Ok document ->
                             Expect.all
                                 [ JsonApi.Document.resource >> .id >> Expect.equal "13608770-76dd-47e5-a1c4-4d0d9c2483ad"

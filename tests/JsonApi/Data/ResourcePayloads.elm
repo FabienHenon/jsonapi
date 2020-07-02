@@ -1,4 +1,4 @@
-module JsonApi.Data.ResourcePayloads exposing (commentWithoutIncluded, dataIsList, invalidPayloadCommentsIsOneElement, invalidPayloadCreatorIsList, invalidPayloadWithoutAttributes, invalidPayloadWithoutCreatorAttributes, invalidPayloadWithoutCreatorId, invalidPayloadWithoutCreatorRelationships, invalidPayloadWithoutCreatorType, invalidPayloadWithoutData, invalidPayloadWithoutId, invalidPayloadWithoutRelationshipIdNotFound, invalidPayloadWithoutRelationshipInIncluded, invalidPayloadWithoutRelationshipInRelationships, invalidPayloadWithoutRelationshipTypeNotFound, invalidPayloadWithoutRelationships, invalidPayloadWithoutType, validPayload, validPayloadWithNullLink, validPayloadWithRootLinks, validPayloadWithoutLinks)
+module JsonApi.Data.ResourcePayloads exposing (commentWithoutIncluded, dataIsList, invalidPayloadCommentsIsOneElement, invalidPayloadCreatorIsList, invalidPayloadWithoutAttributes, invalidPayloadWithoutCreatorAttributes, invalidPayloadWithoutCreatorId, invalidPayloadWithoutCreatorRelationships, invalidPayloadWithoutCreatorType, invalidPayloadWithoutData, invalidPayloadWithoutId, invalidPayloadWithoutRelationshipIdNotFound, invalidPayloadWithoutRelationshipInIncluded, invalidPayloadWithoutRelationshipInRelationships, invalidPayloadWithoutRelationshipTypeNotFound, invalidPayloadWithoutRelationships, invalidPayloadWithoutType, validPayload, validPayloadNoIncluded, validPayloadWithNullLink, validPayloadWithRootLinks, validPayloadWithoutLinks)
 
 
 validPayload : String
@@ -78,6 +78,49 @@ validPayload =
                 "relationships": {}
             }
         ]
+    }
+    """
+
+
+validPayloadNoIncluded : String
+validPayloadNoIncluded =
+    """
+    {
+        "data": {
+            "type": "posts",
+            "id": "13608770-76dd-47e5-a1c4-4d0d9c2483ad",
+            "links": {
+                "self": "http://link-to-post/1"
+            },
+            "attributes": {
+                "title": "First post",
+                "content": "First post content"
+            },
+            "relationships": {
+                "creator": {
+                    "data": {
+                        "type": "creators",
+                        "id": "22208770-76dd-47e5-a1c4-4d0d9c2483ad"
+                    },
+                    "links": {
+                        "related": "http://link-to-creator/1"
+                    }
+                },
+                "comments": {
+                    "links": {},
+                    "data": [
+                        {
+                            "type": "comment",
+                            "id": "22208770-76dd-47e5-a1c4-4d0d9c2483ab"
+                        },
+                        {
+                            "type": "comment",
+                            "id": "cb0759b0-03ab-4291-b067-84a9017fea6f"
+                        }
+                    ]
+                }
+            }
+        }
     }
     """
 
