@@ -148,6 +148,7 @@ _Example json:_
 import Dict exposing (Dict)
 import Json.Decode exposing (Decoder, Value, andThen, at, decodeValue, dict, errorToString, fail, field, keyValuePairs, list, map, map2, map3, map4, map8, maybe, oneOf, string, succeed, value)
 import Json.Decode.Extra exposing (andMap)
+import Json.Encode as JE
 import JsonApi.Document as Document
 import JsonApi.Internal.Document as DocInternal
 import JsonApi.Internal.ResourceInfo as Internal
@@ -563,7 +564,11 @@ dataDecoder type_ decoder =
 filterDataType : String -> (Resource -> Decoder a) -> Internal.ResourceInfoInternal -> Decoder (Maybe a)
 filterDataType dataType decoder info =
     if dataType == info.type_ then
-        field "attributes" (decoder (Internal.ResourceInfo info)) |> map Just
+        oneOf
+            [ field "attributes" (decoder (Internal.ResourceInfo info))
+            , decoder (Internal.ResourceInfo info)
+            ]
+            |> map Just
 
     else
         succeed Nothing
@@ -576,7 +581,7 @@ resourceInfoInternalDecoder included =
         |> andMap linksDecoder
         |> andMap (field "type" string)
         |> andMap (oneOf [ field "relationships" resourceRelationshipsDecoder, succeed Dict.empty ])
-        |> andMap (field "attributes" value)
+        |> andMap (oneOf [ field "attributes" value, succeed (JE.object []) ])
 
 
 linksDecoder : Decoder (Dict String String)

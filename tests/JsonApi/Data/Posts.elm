@@ -1,7 +1,7 @@
-module JsonApi.Data.Posts exposing (Comment, Creator, Post, PostWithRelationshipDesc, badCreatorDecoder, badPostDecoder, comment1, comment2, comment3, commentDecoder, creator, creatorDecoder, fakeUser, metaDecoder, post2, postBadCreatorDecoder, postDecoder, postDecoderWithRelationshipsDesc, postDecoderWithoutCreator, postNoLink, postWithoutAttributesDecoder, postWithoutRelationshipsDecoder, posts)
+module JsonApi.Data.Posts exposing (Comment, Creator, EmptyComment, EmptyPost, Post, PostWithRelationshipDesc, badCreatorDecoder, badPostDecoder, comment1, comment2, comment3, commentDecoder, creator, creatorDecoder, emptyPostDecoder, fakeUser, metaDecoder, post2, postBadCreatorDecoder, postDecoder, postDecoderWithRelationshipsDesc, postDecoderWithoutCreator, postNoLink, postWithoutAttributesDecoder, postWithoutRelationshipsDecoder, posts)
 
 import Dict exposing (Dict)
-import Json.Decode exposing (Decoder, bool, decodeString, field, map, map4, map5, map6, oneOf, string, succeed)
+import Json.Decode exposing (Decoder, bool, decodeString, field, map, map2, map4, map5, map6, oneOf, string, succeed)
 import JsonApi.Decode as Decode
 import JsonApi.Resource exposing (Resource)
 
@@ -13,6 +13,14 @@ type alias Post =
     , content : String
     , creator : Creator
     , comments : List Comment
+    }
+
+
+type alias EmptyPost =
+    { id : String
+    , links : Dict String String
+    , creator : Creator
+    , comments : List EmptyComment
     }
 
 
@@ -29,6 +37,12 @@ type alias Comment =
     , links : Dict String String
     , content : String
     , email : String
+    }
+
+
+type alias EmptyComment =
+    { id : String
+    , links : Dict String String
     }
 
 
@@ -118,6 +132,13 @@ commentDecoder resourceInfo =
         (field "email" string)
 
 
+emptyCommentDecoder : Resource -> Decoder EmptyComment
+emptyCommentDecoder resourceInfo =
+    map2 EmptyComment
+        (succeed (JsonApi.Resource.id resourceInfo))
+        (succeed (JsonApi.Resource.links resourceInfo))
+
+
 creatorDecoder : Resource -> Decoder Creator
 creatorDecoder resourceInfo =
     map4 Creator
@@ -136,6 +157,15 @@ postDecoder resourceInfo =
         (field "content" string)
         (Decode.relationship "creator" resourceInfo creatorDecoder)
         (Decode.relationships "comments" resourceInfo commentDecoder)
+
+
+emptyPostDecoder : Resource -> Decoder EmptyPost
+emptyPostDecoder resourceInfo =
+    map4 EmptyPost
+        (succeed (JsonApi.Resource.id resourceInfo))
+        (succeed (JsonApi.Resource.links resourceInfo))
+        (Decode.relationship "creator" resourceInfo creatorDecoder)
+        (Decode.relationships "comments" resourceInfo emptyCommentDecoder)
 
 
 postDecoderWithoutCreator : Resource -> Decoder Post

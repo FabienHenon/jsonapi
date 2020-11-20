@@ -42,6 +42,27 @@ suite =
 
                         Err error ->
                             Expect.fail (errorToString error)
+            , test "decode success with missing attributes" <|
+                \() ->
+                    case decodeString (Decode.resources "posts" emptyPostDecoder |> Decode.errorToFailure) Resources.validPayloadWithoutAttr of
+                        Ok document ->
+                            Expect.all
+                                [ JsonApi.Document.resource >> List.map .id >> Expect.equalLists [ "13608770-76dd-47e5-a1c4-4d0d9c2483ad", "13608770-76dd-47e5-a1c4-4d0d9c2483ae" ]
+                                , JsonApi.Document.resource
+                                    >> List.map (.links >> Dict.toList)
+                                    >> Expect.equalLists
+                                        [ [ ( "self", "http://link-to-post/1" ) ]
+                                        , [ ( "self", "http://link-to-post/2" ) ]
+                                        ]
+                                , JsonApi.Document.resource >> List.map (.creator >> .firstname) >> Expect.equalLists [ "John", "John" ]
+                                , JsonApi.Document.resource >> List.map (.creator >> .lastname) >> Expect.equalLists [ "Doe", "Doe" ]
+                                , JsonApi.Document.meta >> Expect.equal JsonApi.Internal.Document.NoMeta
+                                , JsonApi.Document.jsonApiVersion >> Expect.equal "1.0"
+                                ]
+                                document
+
+                        Err error ->
+                            Expect.fail (errorToString error)
             , test "decode success with null link" <|
                 \() ->
                     case decodeString (Decode.resources "posts" postDecoder |> Decode.errorToFailure) Resources.validPayloadWithNullLink of
